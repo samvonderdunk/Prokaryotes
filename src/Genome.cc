@@ -919,6 +919,13 @@ bool Genome::IsTFBS(Bead* bead) const {
 
 
 string Genome::PrintContent(list<Bead*> * chromosome, bool terminal)	// Printing function for terminal output.
+int Genome::FindIndexOfType(int type)
+{
+	gene_iter git = find(GeneTypes->begin(), GeneTypes->end(), type);
+	if(git == GeneTypes->end())	return -1;	//This is a signal during MoveGenomeToChild() that the type does not yet exist in the GeneTypes vector.
+	else	return distance(GeneTypes->begin(), git);
+}
+
 {
 	string GenomeContent;
 	if(chromosome == NULL) chromosome = this->BeadList;

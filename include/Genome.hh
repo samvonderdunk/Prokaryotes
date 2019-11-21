@@ -63,6 +63,8 @@ class Genome {
   bool IsGene(Bead* bead) const;
   bool IsTFBS(Bead* bead) const;
   string PrintContent(list<Bead*>* chromosome, bool terminal);
+  int FindIndexOfType(int type);
+
   string PrintGeneStateContent();
   string PrintGeneTypeContent();
 };
