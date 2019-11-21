@@ -1,7 +1,7 @@
 #include "TFBS.hh"
 
 TFBS::TFBS() : Bead() {	// TFBS is derived class of Bead
-  type=0;
+  type=1;
   activity=0;
   for(int i=0; i<binding_length; i++) binding_site[i] = 0;
   ClaimVector = new vector<double>();
