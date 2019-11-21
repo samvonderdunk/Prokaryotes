@@ -1,0 +1,3 @@
+Prok_*
+obj/
+! obj/Makefile
