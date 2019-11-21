@@ -30,7 +30,7 @@ BINPATH = ../
 LIBPATH = ../lib
 
 # Project vars
-PROJECT = Prokaryotes1.0
+PROJECT = Prok_Basic_Cycle
 LIBRARY = mor
 ALL =  Bead.o Gene.o TFBS.o Genome.o Prokaryote.o Population.o World.o dSFMT.o
 OBJECTS = $(ALL)
