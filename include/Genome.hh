@@ -57,7 +57,8 @@ class Genome {
 
   iter MatchGeneToTFBS(iter i_tfbs);
   double MatchBitStrings(Bead* b_tfbs, Bead* b_gene);
-  int UpdateSingleGene(iter ii);
+
+  void GenomeToNetwork(double** Network);
 
   bool IsGene(Bead* bead) const;
   bool IsTFBS(Bead* bead) const;

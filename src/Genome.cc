@@ -822,36 +822,6 @@ double Genome::MatchBitStrings(Bead* b_tfbs, Bead* b_gene){
   return pow((double)binding_strength/(double)binding_length, tfbs_selection_exponent);
 }
 
-int Genome::UpdateSingleGene(iter ii)
-{
-	iter qq(ii);	//qq now points to the same element as ii.
-	int sumeffects = 0;
-	Gene* gene = dynamic_cast<Gene*>(*ii);
-
-	qq--;
-	while (!IsGene(*qq))	//Stop if we come upon the next upstream gene. |-----G1----G2----| i.e. if we get to G1.
-	{
-		//Here we start checking the expression of our focal gene. Since this is the same as what is used in UpdateGeneStates() I should make a function of it.
-		iter i_gene;
-		i_gene = MatchGeneToTFBS(qq);		//We actually choose a specific gene of the winning gene type / or we pick one randomly since they will all give the same activity.
-		if (i_gene == BeadList->end())
-		{
-			sumeffects += 0;
-		}
-		else
-		{
-			Gene* incoming_gene = dynamic_cast<Gene*>(*i_gene);
-			TFBS* tfbs = dynamic_cast<TFBS*>(*qq);
-			sumeffects += tfbs->activity*incoming_gene->activity;
-		}
-		if(qq == BeadList->begin())	break;	//The first element of BeadList (often a TFBS) is still included, but we finish the loop after that.
-		else qq--;
-	}
-
-	sumeffects -= gene->threshold;
- 	return max(min(sumeffects+1,1),0);	//Return the expression of the gene.
-}
-
 /*
 ###########################################################################
 ###########################################################################
@@ -860,6 +830,83 @@ int Genome::UpdateSingleGene(iter ii)
 ###########################################################################
 ###########################################################################
 */
+
+void Genome::GenomeToNetwork(double** Network)
+{
+	double NetRow[8] = {.0, .0, .0, .0, .0, .0, .0, .0};	//First element is threshold of gene (sum of the copies), then 5 elements for incoming effects of G1-5, and then 2 elements for other positive incoming effects (sum) and other negative incoming effects (sum).
+	vector<int> TypeCopyNumber;
+	vector<int> GeneActivity;
+	iter it;
+	gene_iter git;
+	int index, type, gene_act, gene_copynum, bead_count = 0;
+	TFBS* tfbs;
+	TFBS::claim_iter cit;
+	double Effect;
+	Gene* gene;
+
+	//Before we can interpret the ClaimVectors of all TFBS's we need to know if there are genes present in higher copy number.
+	TypeCopyNumber.resize(GeneTypes->size(),0);
+	GeneActivity.resize(GeneTypes->size(),0);
+
+	it = BeadList->begin();
+	while(it != BeadList->end() && bead_count < pos_anti_ori)
+	{
+		if(IsGene(*it))
+		{
+			git = find(GeneTypes->begin(), GeneTypes->end(), (*it)->type);
+			index = distance(GeneTypes->begin(), git);
+			TypeCopyNumber.at(index)++;
+			gene = dynamic_cast<Gene*>(*it);
+			GeneActivity.at(index) = gene->activity;
+		}
+		it++;
+		bead_count++;
+	}
+
+	bead_count = 0;
+	it = BeadList->begin();
+	while(it != BeadList->end() && bead_count < pos_anti_ori)
+	{
+		if(IsTFBS(*it))
+		{
+			//Iterate through ClaimVector, noting whether it is a claim of G1-5 or a different gene.
+			tfbs = dynamic_cast<TFBS*>(*it);
+			cit = tfbs->ClaimVector->begin();
+			index = 0;
+			while (cit != tfbs->ClaimVector->end())
+			{
+				type = GeneTypes->at(index);
+				gene_act = GeneActivity.at(index);
+				gene_copynum = TypeCopyNumber.at(index);
+				Effect = (*cit) * gene_copynum * gene_act * tfbs->activity;	//(*cit) is the raw claim, i.e. the bitstring match between TFBS and gene.
+
+				if(type <= 5)	NetRow[type] += Effect;
+				else if (Effect > 0)	NetRow[6] += Effect;
+				else	NetRow[7] += Effect;
+
+				cit++;
+				index++;
+			}
+		}
+		else if(IsGene(*it))
+		{
+			if((*it)->type <= 5)
+			{
+				gene = dynamic_cast<Gene*>(*it);
+				NetRow[0] += gene->threshold;
+
+				//Put NetRow in the right row of Net.
+				for (int col=0; col<8; col++)
+				{
+					Network[gene->type-1][col] += NetRow[col];
+					NetRow[col] = 0.;
+				}
+			}
+		}
+		it++;
+		bead_count++;
+	}
+}
 
 
 bool Genome::IsGene(Bead* bead) const	{
