@@ -457,26 +457,11 @@ int Genome::CountTypeAbundance(int type)
 void Genome::ReadInitialGenome()
 {
 	BeadList = new list<Bead*>();
-	Gene* gene;
-	TFBS* tfbs;
-	int type, threshold, activity, q;
-	char* buffer;
-	bool bitstring[binding_length];
 	GeneTypes = new vector<int>();
+	GeneStates = new vector<int>();	//If we set -g [G1,S,G2,M] in the command line, we will update genestates while we read the genome.
 
 	ifstream infile(genome_init.c_str());
 	string line;
-	char* bead;
-	gnr_genes = 0;
-	g_length = 0;
-
-	GeneStates = new vector<int>();	//If we set -g [G1,S,G2,M] in the command line, we will update genestates while we read the genome.
-	bool StageInit[5];
-	if (genestate_init == "G1")	for(int g=0; g<5; g++)	StageInit[g] = StageTargets[0][g];
-	else if (genestate_init == "S") for(int g=0; g<5; g++)	StageInit[g] = StageTargets[1][g];
-	else if (genestate_init == "G2") for(int g=0; g<5; g++)	StageInit[g] = StageTargets[2][g];
-	else if (genestate_init == "M") for(int g=0; g<5; g++)	StageInit[g] = StageTargets[3][g];
-	else	printf("Expression not set to a cell-cycle stage.\n");
 
 	if (!infile.is_open())
 	{
@@ -487,90 +472,103 @@ void Genome::ReadInitialGenome()
 	printf("Reading genome from file: %s\n", genome_init.c_str());
 	while(getline(infile,line))
 	{
-		bead = strtok((char*)line.c_str(),".");
-		while (bead != NULL)
-		{
-			if(bead[1] == 'G')	//Bead is a gene
-			{
-    		buffer = new char();
-				int success = sscanf(bead, "(G%d:%d:%d:%s)", &type, &threshold, &activity, buffer);
-				if(success != 4) cerr << "Could not find sufficient information for this gene. Genome file potentially corrupt. \n" << endl;
-				q = 0;
-				while(buffer[q] != ')')		//The extra bracket stored in buffer actually pays off here because I don't know how else I would know that we reached the end of buffer.
-				{
-					bitstring[q] = (buffer[q]=='1');	//Easiest way I could think of to convert a character to a boolean; (bool)buffer[q] always returns 1 (whether '1' or '0')!
-					q++;
-				}
-				gene = new Gene(type, threshold, activity, bitstring, (type<5));
-				bool type_used = false;
-				gene_iter git = GeneTypes->begin();
-				while(git != GeneTypes->end())
-				{
-					if ((*git) == type)
-					{
-						type_used = true;
-						break;
-					}
-					git++;
-				}
-				if(!type_used)
-				{
-					GeneTypes->push_back(type);
-					if (genestate_init == "G1" || genestate_init == "S" || genestate_init == "G2" || genestate_init == "M")	//Then we have given a cell-cycle stage as input argument so let's set the five main TF's to their corresponding value.
-					{
-						if (type < 5)	//For the five main TFs we set the expression according to the stage given as input argument.
-						{
-							if(StageInit[type])	GeneStates->push_back(1);
-							else	GeneStates->push_back(0);
-							//printf("Set expression G%d to %d.\n", type, GeneStates->at(GeneStates->size()-1));
-						}
-						else
-						{
-							GeneStates->push_back((int)(uniform()*2));	//For the genes other than the five main TFs we randomly set the expression.
-							//printf("Set expression G%d to %d.\n", type, GeneStates->at(GeneStates->size()-1));
-						}
-					}
-				}
-				else if (genestate_init == "G1" || genestate_init == "S" || genestate_init == "G2" || genestate_init == "M"){
-					//The previous loop will have broken, so the git iterator will be pointing to the element in GeneTypes that is of the same type as the current gene.
-					//Thus we need to find the corresponding item in the GeneStates vector.
-					int pos = distance(GeneTypes->begin(), git);
-					gene_iter git2 = GeneStates->begin();
-					advance(git2, pos);
-					//This gene type has 50% chance to get its expression incremented (as another copy of the gene was found); but only if it is active in the specified cell-cycle stage.
-					if(StageInit[type]) (*git2) += (int)(uniform()*2);
-				}
-				(*BeadList).push_back(gene);
-				gnr_genes++;
-				g_length++;
-				delete buffer;	//I think this prevents a memory leak. Otherwise buffer simply frees up new memory the next time it says "buffer = new char()". Because I did not use "new []" to create the variable, I should not use "delete []" to free up the memory.
-			}
-			else	//Bead is a tfbs
-			{
-				buffer = new char();
-				int success = sscanf(bead, "(%d:%s)", &activity, buffer);
-				if(success != 2) cerr << "Could not find sufficient information for this TFBS. Genome file potentially corrupt. \n" << endl;
-				q = 0;
-				while(buffer[q] != ')')
-				{
-					bitstring[q] = (buffer[q]=='1');
-					q++;
-				}
-				tfbs = new TFBS(0, activity, bitstring);
-				(*BeadList).push_back(tfbs);
-				g_length++;
-				delete buffer;
-			}
-			bead = strtok(NULL, ".");
-		}
+		ReadBeadsFromString(line);
 	}
 
 	//Read or randomly set initial expression.
 	if(genestate_init == "")	for(int g=0; (size_t)g<GeneTypes->size(); g++)	GeneStates->push_back((int)(uniform()*2));
 	else if(genestate_init != "G1" && genestate_init != "S" && genestate_init != "G2" && genestate_init != "M")	ReadInitialGeneStates();	//if genestate_input was specified, the GeneStates should have already been initialised during the reading of the genome.
 
+	//Set forks.
+	pos_fork = 0;
+	pos_anti_ori = g_length;
+
 	SetClaimVectors();
 }
+
+
+void Genome::ReadBeadsFromString(string genome)
+{
+	char* bead;
+	int index;
+	bool StageInit[5];
+	gnr_genes = 0;
+	g_length = 0;
+	Gene* gene;
+	TFBS* tfbs;
+	int type, threshold, activity, q;
+	char* buffer;
+	bool bitstring[binding_length];
+
+	if (genestate_init == "G1")	for(int g=1; g<6; g++)	StageInit[g] = StageTargets[0][g-1];
+	else if (genestate_init == "S") for(int g=1; g<6; g++)	StageInit[g] = StageTargets[1][g-1];
+	else if (genestate_init == "G2") for(int g=1; g<6; g++)	StageInit[g] = StageTargets[2][g-1];
+	else if (genestate_init == "M") for(int g=1; g<6; g++)	StageInit[g] = StageTargets[3][g-1];
+	else if (backup_reboot == "")	printf("Expression not set to a cell-cycle stage.\n");
+
+	bead = strtok((char*)genome.c_str(),".");
+	while (bead != NULL)
+	{
+		if(bead[1] == 'G')	//Bead is a gene
+		{
+			buffer = new char();
+			int success = sscanf(bead, "(G%d:%d:%d:%s)", &type, &threshold, &activity, buffer);
+			if(success != 4) cerr << "Could not find sufficient information for this gene. Genome file potentially corrupt. \n" << endl;
+			q = 0;
+			while(buffer[q] != ')')		//The extra bracket stored in buffer actually pays off here because I don't know how else I would know that we reached the end of buffer.
+			{
+				bitstring[q] = (buffer[q]=='1');	//Easiest way I could think of to convert a character to a boolean; (bool)buffer[q] always returns 1 (whether '1' or '0')!
+				q++;
+			}
+			gene = new Gene(type, threshold, activity, bitstring, 0);	//We initialise with zero expression, but these should be updated with the first round of UpdateGeneStates().
+			index = FindIndexOfType(abs(type));
+			if(index == -1)	//Type not found in GeneTypes, so add an element.
+			{
+				GeneTypes->push_back(abs(type));
+				if (genestate_init == "G1" || genestate_init == "S" || genestate_init == "G2" || genestate_init == "M")	//Then we have given a cell-cycle stage as input argument so let's set the five main TF's to their corresponding value.
+				{
+					if (abs(type) < 6)	//For the five main TFs we set the expression according to the stage given as input argument.
+					{
+						if(StageInit[abs(type)])	GeneStates->push_back(1);
+						else	GeneStates->push_back(0);
+					}
+					else
+					{
+						GeneStates->push_back((int)(uniform()*2));	//For the genes other than the five main TFs we randomly set the expression.
+					}
+				}
+			}
+			else if (genestate_init == "G1" || genestate_init == "S" || genestate_init == "G2" || genestate_init == "M"){
+				//This is the second copy of a particular type, so just increment the existing GeneStates element.
+				//This gene type is expressed if it is active in the specified cell-cycle stage.
+				if (StageInit[abs(type)])	GeneStates->at(index) += 1;
+				else if(abs(type) > 6)	GeneStates->at(index) += (int)(uniform()*2);	//Increment gene state by 0 or 1.
+			}
+			(*BeadList).push_back(gene);
+			gnr_genes++;
+			g_length++;
+			delete buffer;	//I think this prevents a memory leak. Otherwise buffer simply frees up new memory the next time it says "buffer = new char()". Because I did not use "new []" to create the variable, I should not use "delete []" to free up the memory.
+		}
+		else	//Bead is a tfbs
+		{
+			buffer = new char();
+			int success = sscanf(bead, "(%d:%s)", &activity, buffer);
+			if(success != 2) cerr << "Could not find sufficient information for this TFBS. Genome file potentially corrupt. \n" << endl;
+			q = 0;
+			while(buffer[q] != ')')
+			{
+				bitstring[q] = (buffer[q]=='1');
+				q++;
+			}
+			tfbs = new TFBS(1, activity, bitstring);
+			(*BeadList).push_back(tfbs);
+			g_length++;
+			delete buffer;
+		}
+		bead = strtok(NULL, ".");
+	}
+}
+
 
 void Genome::ReadInitialGeneStates()
 {

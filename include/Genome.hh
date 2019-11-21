@@ -48,6 +48,7 @@ class Genome {
   int CountTypeAbundance(int type);
 
   void ReadInitialGenome();
+  void ReadBeadsFromString(string genome);
   void ReadInitialGeneStates();
   void InitialiseRandomGenome();
 
