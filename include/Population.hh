@@ -35,6 +35,7 @@ class Population
 		void ReadAncestorFile();
 
 		void ReproduceMasterGenome();
+		void ExploreAttractorLandscape();
 		void UpdatePopulation();
 		void PruneFossilRecord();
 		double MatrixDistance(Prokaryote* PP1, Prokaryote* PP2);

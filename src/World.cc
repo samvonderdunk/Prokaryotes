@@ -12,7 +12,9 @@ int initial_seed = time(0);
 int TargetExpression[5] = {};
 string folder = "/linuxhome/tmp/sam/Prokaryotes/";
 bool mutational_neighbourhood = false;
+bool attractor_landscape = false;
 int NrMutants = 0;
+int NrInitialStates = 0;
 string genome_init = genome_file;
 string genestate_init = genestate_file;
 string backup_reboot = backup_file;
@@ -33,11 +35,18 @@ int main(int argc, char** argv) {
 	printf("Setup completed...\n\n");
 
 	/* ############## Simulate Mutants ############## */
-	if (mutational_neighbourhood == true)
+	if (mutational_neighbourhood)
 	{
 		printf("\033[93m### Start ###\033[0m\n");
 		P = new Population();
 		P->ReproduceMasterGenome();
+	}
+
+	else if (attractor_landscape)
+	{
+		printf("\033[93m### Start ###\033[0m\n");
+		P = new Population();
+		P->ExploreAttractorLandscape();
 	}
 
 	else
@@ -112,6 +121,16 @@ void Setup(int argc, char** argv) {
 			mutational_neighbourhood = true;
 			NrMutants = atoi(argv[i+1]);
 			printf("Exploring mutational neighbourhood by generating %d children.\n", NrMutants);
+			i++;
+			continue;
+		}
+
+		//If user wants to look at attractor landscape, all possible states will be simulated for one timestep (or a sample of all possible states) and their resulting states will be given as output.
+		if(ReadOut=="-A" && (i+1)!=argc)
+		{
+			attractor_landscape = true;
+			NrInitialStates = atoi(argv[i+1]);
+			printf("Exploring attractor landscape by simulating %d initial states.\n", NrInitialStates);
 			i++;
 			continue;
 		}

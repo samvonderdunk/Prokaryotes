@@ -377,11 +377,139 @@ void Population::ReproduceMasterGenome()
 	}
 }
 
-void Population::UpdatePopulation()	//This is the main next-state function.
+void Population::ExploreAttractorLandscape()
 {
+	int max_nr_initial_states, nr_initial_states, state_id, count_b, index;
+	Genome::gene_iter git;
+	Genome::iter it;
+	Gene* gene;
+	Prokaryote* PP;	//the parent
+	Prokaryote* CP;	//the child
+	vector<int> InitialState;
+	vector< vector<int> > NextStates;
+	vector< vector<int> >::iterator ns;
+	vector<int> TimesVisited;
+	bool novel_state;
 
-	if(Time%TimeSaveGrid==0)	PrintSampleToFile();
-	//if(Time%TimeSaveGrid==0)	PrintFieldToFile();
+
+	//First create one Prokaryote.
+	PP = new Prokaryote();
+	PP->InitialiseProkaryote();
+	//Print the genome to let the user be aware.
+	string Parent_Genome = PP->G->PrintContent(NULL, false, false);
+	cout << "\nGenome:\t" << Parent_Genome << "\n" << endl;
+	cout << "<<<\nSource state\tTarget state\tProbability" << endl;
+
+	//Now run through all possible initial states (or sample the number of initial states given by the user).
+	max_nr_initial_states = pow(2, PP->G->gnr_genes);
+	nr_initial_states = (NrInitialStates > max_nr_initial_states) ? max_nr_initial_states : NrInitialStates;
+
+	for (int s=0; s<nr_initial_states; s++)
+	{
+		//NextStates and TimesVisited are reset.
+		NextStates.clear();
+		TimesVisited.clear();
+
+		//Set the GeneStates vector to zero, so that we only have to go through it when we need to turn a gene on (they are off by default).
+		git = PP->G->GeneStates->begin();
+		while(git != PP->G->GeneStates->end())
+		{
+			(*git) = 0;
+			git++;
+		}
+
+		state_id = (NrInitialStates > max_nr_initial_states) ? s : (int)(uniform()*max_nr_initial_states);	//Sample states randomly (currently with redraws) or iterate through all possible states.
+
+		//Translate state_id to a bit-pattern used to set the GeneStates.
+		for(int b=PP->G->gnr_genes-1; b>=0; b--)
+		{
+
+			if (state_id >= pow(2, b))	//This gene is on.
+			{
+				//Find the b'th gene in the genome. We increment the expression of that type.
+				count_b = -1;
+				it = PP->G->BeadList->begin();
+				while(it != PP->G->BeadList->end())
+				{
+					if(PP->G->IsGene(*it))
+					{
+						count_b++;
+						if (count_b == b)	//We have hit the b'th gene.
+						{
+							git = find(PP->G->GeneTypes->begin(), PP->G->GeneTypes->end(), (*it)->type);
+							index = distance(PP->G->GeneTypes->begin(), git);
+							gene = dynamic_cast<Gene*>(*it);
+							gene->expression = 1;
+							PP->G->GeneStates->at(index) += gene->expression;
+							break;	//Break out of the while-loop; we have set the expression of one gene according to the initial state that we want to test here.
+						}
+					}
+					it++;
+				}
+				state_id -= pow(2, b);
+			}
+
+		}
+		//Now we have set GeneStates based on the bit-pattern.
+		InitialState = *PP->G->GeneStates;
+
+		//Simulate this cell as many types as the grid is large.
+		for(int a=0; a<NR*NC; a++)
+		{
+			CP=new Prokaryote();
+			CP->ClonePPFromPP(PP, 0);
+			CP->G->UpdateGeneStates();	//Update the expression.
+
+			//Check if we have already seen this expression as an outcome.
+			novel_state = true;	//We'll set it to false if we find out that we have already seen it.
+			ns = NextStates.begin();
+			while(ns != NextStates.end())
+			{
+				if (*(CP->G->GeneStates) == *ns)
+				{
+					index = distance(NextStates.begin(), ns);
+					TimesVisited.at(index)++;
+					novel_state = false;
+					break;
+				}
+				ns++;
+			}
+			if (novel_state)	//Either it is the first state in general we have visited or it is a novel state.
+			{
+				NextStates.push_back(*CP->G->GeneStates);
+				TimesVisited.push_back(1);
+			}
+
+			delete CP;
+			CP = NULL;
+		}
+
+		//Now we have simulated this initial state NR*NC times; print the output.
+		for (int p=0; (size_t)p<TimesVisited.size(); p++)
+		{
+			git = InitialState.begin();
+			while (git != InitialState.end())
+			{
+				cout << *git;
+				git++;
+			}
+			cout << "\t";
+			git = (NextStates.at(p)).begin();
+			while (git != (NextStates.at(p)).end())
+			{
+				cout << *git;
+				git++;
+			}
+			cout << "\t" << (double)TimesVisited.at(p)/(double)(NR*NC) << endl;
+		}
+
+	}
+
+	cout << ">>>\n" << endl;
+	delete PP;
+	PP = NULL;
+}
+
 void Population::UpdatePopulation()	//This is the main next-state function.
 {
 	int reps = 0;
