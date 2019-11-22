@@ -882,7 +882,6 @@ void Genome::UpdateGeneStates()
 
 void Genome::SetClaimVectors()
 {
-	double binding_strength;
 	iter it, ig;
 	it = BeadList->begin();
 	while(it != BeadList->end())
@@ -900,8 +899,7 @@ void Genome::SetClaimVectors()
 				if(IsGene(*ig))		//Currently we are still recalculating the bitstring match for each gene in our genome, even though genes of the same type should only have to be matched once.
 				{
 					int index = FindIndexOfType(abs((*ig)->type));
-					binding_strength = MatchBitStrings(*it, *ig);
-					tfbs->ClaimVector->at(index) = binding_strength;
+					tfbs->ClaimVector->at(index) = '0'+MatchBitStrings(*it, *ig);
 				}
 				ig++;
 			}
@@ -915,12 +913,14 @@ Genome::iter Genome::MatchGeneToTFBS(iter i_tfbs)
 {
 	TFBS* tfbs;
 	tfbs = dynamic_cast<TFBS*>(*i_tfbs);
+	double claim_value, final_claim;
 	double claim_sum = 0.0;
 	iter i_gene;
 	//Calculate the claim sum.	//Maybe faster to iterate through the elements.
 	for(int g=0; (size_t)g<GeneStates->size(); g++)
 	{
-		claim_sum += tfbs->ClaimVector->at(g) * (double) GeneStates->at(g);	//Claim of gene types is proportional to the number of active genes of that type and to their binding strength to the tfbs.
+		claim_value = (int)tfbs->ClaimVector->at(g) - 48;
+		claim_sum += pow( ((double)(claim_value) / (double)(binding_length)), tfbs_selection_exponent) * (double) GeneStates->at(g);	//Claim of gene types is proportional to the number of active genes of that type and to their binding strength to the tfbs.
 	}
 	//Based on the cumulative claim, pick one of the genes.
 	i_gene = BeadList->begin();
@@ -935,7 +935,9 @@ Genome::iter Genome::MatchGeneToTFBS(iter i_tfbs)
 		else	die_roll -= empty_claim;
 		for(int g=0; (size_t)g<GeneStates->size(); g++)
 		{
-			if ( die_roll <= tfbs->ClaimVector->at(g) * (double)(GeneStates->at(g)) )
+			claim_value = (int)tfbs->ClaimVector->at(g) - 48;
+			final_claim = pow( ((double)(claim_value) / (double)(binding_length)), tfbs_selection_exponent) * (double)(GeneStates->at(g));
+			if ( die_roll <= final_claim )
 			{
 				//Increment i_gene until we find a gene of the correct type.
 				while(!(IsGene(*i_gene) && abs((*i_gene)->type)==GeneTypes->at(g)))
@@ -944,14 +946,14 @@ Genome::iter Genome::MatchGeneToTFBS(iter i_tfbs)
 				}
 				return i_gene;
 			}
-			die_roll -= tfbs->ClaimVector->at(g) * (double)GeneStates->at(g);
+			die_roll -= final_claim;
 		}
 	}
 	printf("Error: claim out of bounds.\n");
 	exit(1);
 }
 
-double Genome::MatchBitStrings(Bead* b_tfbs, Bead* b_gene){
+int Genome::MatchBitStrings(Bead* b_tfbs, Bead* b_gene){
 	TFBS* tfbs;
 	Gene* gene;
 	tfbs = dynamic_cast<TFBS*> (b_tfbs);
@@ -963,7 +965,9 @@ double Genome::MatchBitStrings(Bead* b_tfbs, Bead* b_gene){
     if(tfbs->binding_site[k] != gene->binding_domain[k]) binding_strength++;		//We do complementary pairing for the beauty of it (but also expected in visualisations).
   }
 
-  return pow((double)binding_strength/(double)binding_length, tfbs_selection_exponent);
+  // return pow((double)binding_strength/(double)binding_length, tfbs_selection_exponent-min(4*(Time/500000),4));
+	// return pow((double)binding_strength/(double)binding_length, tfbs_selection_exponent);
+	return binding_strength;
 }
 
 /*

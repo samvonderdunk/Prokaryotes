@@ -61,7 +61,7 @@ class Genome {
   void SetClaimVectors();
 
   iter MatchGeneToTFBS(iter i_tfbs);
-  double MatchBitStrings(Bead* b_tfbs, Bead* b_gene);
+  int MatchBitStrings(Bead* b_tfbs, Bead* b_gene);
 
   void GenomeToNetwork(double** Network);
 
