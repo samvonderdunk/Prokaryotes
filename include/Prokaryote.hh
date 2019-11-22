@@ -21,7 +21,7 @@ class Prokaryote{
 		void ClonePPFromPP(Prokaryote* PP_template);
 		void Replicate(Prokaryote* PP_parent);
 		void EmptyProkaryote();
-
+		void PrintData(bool include_genome_data);
 		void UpdateCellCycle();
 };
 

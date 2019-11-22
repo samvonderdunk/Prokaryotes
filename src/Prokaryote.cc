@@ -47,6 +47,30 @@ void Prokaryote::EmptyProkaryote()
 	Stage = 0;
 }
 
+void Prokaryote::PrintData(bool include_genome_data)
+{
+	printf("##############################################\n");
+	printf("Prokaryote #%llu:\n", fossil_id);
+	if(Ancestor==NULL)	printf("Generation 0\n");
+	else	printf("Child of #%llu\n", Ancestor->fossil_id);
+	printf("Stage = %d\n", Stage);
+	printf("Time of birth = %d\n", time_of_appearance);
+	printf("Fitness deficit = %f\n", fitness_deficit);
+	printf("It is %s.\n", (alive)? "alive":"dead");
+	printf("It is %sready for division.\n", (ready_for_division)? "":"not ");
+	printf("It is %sa mutant.\n", ((mutant)? "":"not " ));
+	printf("It is %sbearing a mutant child.\n", ((mutant_child)? "":"not " ));
+	printf("It will %sbe saved in the graveyard.\n", ((saved_in_graveyard)? "":"not "));
+	printf("----------------------------------------------\n");
+	if(include_genome_data)
+	{
+		printf("Genome:\n%s\n", G->PrintContent(NULL, false, false).c_str());
+		printf("GeneStates:\n%s\n", G->PrintGeneStateContent().c_str());
+		printf("GeneTypes:\n%s\n", G->PrintGeneTypeContent().c_str());
+	}
+	printf("##############################################\n");
+}
+
 void Prokaryote::UpdateCellCycle()	//Check whether changes in GeneStates make us go forward in the cell cycle.
 {
 	int expression;
