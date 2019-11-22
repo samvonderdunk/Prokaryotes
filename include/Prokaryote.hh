@@ -9,7 +9,7 @@ class Prokaryote{
 	public:
 		Genome* G;
 		int Stage;
-		bool ready_for_replication;
+		bool ready_for_division;
 		double fitness_deficit;
 
 		typedef std::list<Prokaryote*>::iterator iteragent;
@@ -18,8 +18,9 @@ class Prokaryote{
 		~Prokaryote();
 
 		void InitialiseProkaryote();
-		void ClonePPFromPP(Prokaryote* PP_template);
-		void Replicate(Prokaryote* PP_parent);
+		void ClonePPFromPP(Prokaryote* PP_template, int tot_prok_count);
+		void Replicate();
+		void Mitosis(Prokaryote* parent, int tot_prok_count);
 		void EmptyProkaryote();
 		void PrintData(bool include_genome_data);
 		void UpdateCellCycle();

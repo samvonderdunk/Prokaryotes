@@ -41,6 +41,7 @@ const int NC=100;
 const int init_nr_gene_types = 10;
 const int init_nr_tfbs_per_gene = 3;
 const int WeightRange = 3;  //TFBS weights can range from -WeightRange to +WeightRange.
+const int repl_step_size = 20;
 
 // Mutations
 const double gene_threshold_mu = 0.001;

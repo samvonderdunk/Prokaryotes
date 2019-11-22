@@ -20,22 +20,41 @@ void Prokaryote::InitialiseProkaryote(){
 	else	G->InitialiseRandomGenome();
 }
 
-void Prokaryote::ClonePPFromPP(Prokaryote* PP_template){
+void Prokaryote::ClonePPFromPP(Prokaryote* PP_template, int tot_prok_count)
+{
 	EmptyProkaryote();
 	//Copy genome from template. This includes the expression levels of each gene.
 	G->CloneGenome(PP_template->G);
 	Stage = PP_template->Stage;
 }
 
-void Prokaryote::Replicate(Prokaryote* PP_parent){
-	EmptyProkaryote();	//Currently this is quite an overkill as first the standard random genome is initiated only to be fully replaced by the copy from the parent genome
-	//Copy parental genome. Includes expression levels, so I will in the future change this function into something like DivideGenome(), as the genome is already replicated.
-	G->CloneGenome(PP_parent->G);
-	//Do mutations.
-	if(mutations_on) G->MutateGenome();		//Beware that this might change the type of genes, so that the expression should also be updated after a succesfull mutation.
-	//Importantly, the parent also returns to the D-stage (0).
-	PP_parent->Stage = 0;
-	PP_parent->ready_for_replication = false;
+void Prokaryote::Replicate()
+{
+	if (G->pos_fork != G->pos_anti_ori)	//If the fork is has reached the opposite of ORI of the genome, there is nothing to replicate.
+	{
+		if (uniform() <= 1.0)	//later the chance that replication proceeds one step depends on several things.
+		{
+			mutant_child = G->ReplicateGenomeStep();
+		}
+	}
+}
+
+void Prokaryote::Mitosis(Prokaryote* parent, int tot_prok_count)
+{
+	EmptyProkaryote();
+	fossil_id = tot_prok_count;
+	time_of_appearance = Time;
+
+	mutant = parent->mutant_child;	//If a mutation happened during the replication of your parent's genome, you become a mutant.
+
+	if (parent->mutant)	Ancestor = parent;	//If your parent was a mutant (i.e. its genome holds a mutation with respect to its parent), then your immediate ancestor is your parent.
+	else	Ancestor = parent->Ancestor;	//If your parent was not a mutant (its genome is the same as its parent), then point to its MRCA.
+
+	G->SplitGenome(parent->G);
+	parent->Stage = 0;
+	parent->ready_for_division = false;
+	parent->mutant_child = false;	//mutant_child is set during replication, and reset upon mitosis. In contrast, mutant is determined upon birth and does not change over the lifetime.
+	parent->fitness_deficit = 0.;	//It can try to replicate better next time.
 }
 
 void Prokaryote::EmptyProkaryote()
@@ -45,6 +64,8 @@ void Prokaryote::EmptyProkaryote()
 	G = new Genome();
 	//Starts at first stage again
 	Stage = 0;
+	ready_for_division = false;
+	fitness_deficit = 0.;
 }
 
 void Prokaryote::PrintData(bool include_genome_data)
@@ -73,13 +94,19 @@ void Prokaryote::PrintData(bool include_genome_data)
 
 void Prokaryote::UpdateCellCycle()	//Check whether changes in GeneStates make us go forward in the cell cycle.
 {
-	int expression;
+	int expression, index;
 	Genome::gene_iter git;
+	int st;
 
-	for (int s=0; s<4; s++)
+	for (int s=0; s<5; s++)
 	{
 		if (s==Stage)
 		{
+			if (Stage == 4)	//If you were in Stage 4, you have to earn it again; you are set back to stage 3 and evaluated for matching stage 4 anew.
+			{
+				Stage = 3;
+				s--;	//This means we will evaluate a Stage-4 cell for Stage 4 again.
+			}
 			int match_next_state = 0;
 			for (int g=1; g<=5; g++)	//g is the type of gene that we are looking for, ie G1-G5; but these may be shuffled (or some missing) from the actual GeneStates.
 			{
@@ -87,7 +114,7 @@ void Prokaryote::UpdateCellCycle()	//Check whether changes in GeneStates make us
 				if (git == G->GeneTypes->end())	expression = 0;
 				else
 				{
-					int index = distance(G->GeneTypes->begin(), git);
+					index = distance(G->GeneTypes->begin(), git);
 					expression = G->GeneStates->at(index);
 				}
 
@@ -97,9 +124,57 @@ void Prokaryote::UpdateCellCycle()	//Check whether changes in GeneStates make us
 				}
 				else	break;
 			}
-			if (match_next_state==5)
+			if (match_next_state==5)	//In principle you develop if you match your next state (and no worries if you don't immediately). When you are in M-stage, however, you should match M-stage, or you get forced back into M-stage with a fitness cost.
 			{
+				if ((Stage == 2 && G->pos_fork != G->pos_anti_ori))	//Check that you are done replicating.
+				{
+					fitness_deficit += 0.1;
+
+					Stage--;	//Keep cell in S- or M-stage virtually.
+
+					git = G->GeneTypes->begin();	//Remove expression of cell-cycle genes.
+					while (git != G->GeneTypes->end())
+					{
+						if (*git < 6)
+						{
+							index = distance(G->GeneTypes->begin(), git);
+							G->GeneStates->at(index) = 0;
+						}
+						git++;
+					}
+
+					Genome::iter it = G->BeadList->begin();	//Now keep it in there physically.
+					while (it != G->BeadList->end())
+					{
+						if(G->IsGene(*it) && (*it)->type < 6)
+						{
+							Gene* gene = dynamic_cast<Gene*>(*it);
+							gene->expression = (StageTargets[s-1][gene->type-1]==true) ? 1:0;	//Set this gene to what it should be in S-stage.
+							git = find(G->GeneTypes->begin(), G->GeneTypes->end(), gene->type);
+							if(git != G->GeneTypes->end())
+							{
+								index = distance(G->GeneTypes->begin(), git);
+								G->GeneStates->at(index) += gene->expression;
+							}
+						}
+						it++;
+					}
+				}
+
 				Stage++;	//You have reached the next stage.
+
+				if (Stage == 3)	//If you opt out of the S-stage you better make sure that everything had a chance to mutate.
+				{
+					Genome::mut_iter mit = G->MutationList->begin();
+					while (mit != G->MutationList->end())
+					{
+						assert((*mit));
+						mit++;
+					}
+
+					delete G->MutationList;
+					G->MutationList = NULL;
+				}
 				break;		//One stage improvement is more than enough for one timestep :)
 			}
 			break;

@@ -54,9 +54,10 @@ void Population::ReproduceMasterGenome()
 	//Maybe this is not very efficient, since the programme will be writing between each reproduction event; but it is definitely simple.
 	for(int n=0; n<NrMutants; n++)
 	{
+		PP->Replicate();
 		CP = new Prokaryote();
-		CP->Replicate(PP);
-		if(Parent_Genome != CP->G->PrintContent(NULL, false)) cout << "Child #" << n << ":\t" << CP->G->PrintContent(NULL, false) << endl;
+		CP->Mitosis(PP, 1);	//It does not matter which fossil_id each child gets, so I say 1.
+		if(Parent_Genome != CP->G->PrintContent(NULL, false, false)) cout << "Child #" << n << ":\t" << CP->G->PrintContent(NULL, false, false) << endl;
 		delete CP;
 		CP = NULL;
 	}
@@ -73,8 +74,8 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 	{
 		if(PPSpace[i][j] != NULL)
 		{
-			if(PPSpace[i][j]->Stage == 4)	PPSpace[i][j]->ready_for_replication = true;
-			else	PPSpace[i][j]->ready_for_replication = false;
+			if(PPSpace[i][j]->Stage == 4)	PPSpace[i][j]->ready_for_division = true;
+			else	PPSpace[i][j]->ready_for_division = false;
 		}
 	}
 
@@ -106,15 +107,14 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 			if (PPSpace[nrow][ncol]!=NULL)	//Random neighbour is alive.
 			{
 				//Replication events
-				if (PPSpace[nrow][ncol]->ready_for_replication && chance < repl_rate)	//Only previously flagged individuals get to replicate (i.e. not the ones that acquired the M-stage only this timestep).
+				if (PPSpace[nrow][ncol]->ready_for_division && chance < (repl_rate<PPSpace[nrow][ncol]->fitness_deficit?0:1)*pow(repl_rate - PPSpace[nrow][ncol]->fitness_deficit,2))	//Only previously flagged individuals get to replicate (i.e. not the ones that acquired the M-stage only this timestep).
 				{
-					// cout << "Parent: " << PPSpace[nrow][ncol]->G->PrintGeneStateContent() << "\t" << PPSpace[nrow][ncol]->G->PrintContent(NULL, true) << endl;
-					// cout << "Parent: " << PPSpace[nrow][ncol]->Stage << endl;
+					// cout << "Parent (2n): " << PPSpace[nrow][ncol]->G->PrintGeneStateContent() << "\t" << PPSpace[nrow][ncol]->G->PrintContent(NULL, false, false) << endl;
 					PPSpace[i][j] = new Prokaryote();
-					PPSpace[i][j]->Replicate(PPSpace[nrow][ncol]);
-					// cout << "Parent: " << PPSpace[nrow][ncol]->Stage << endl;
-					// cout << "Child: " << PPSpace[i][j]->Stage << endl;
-					// cout << "Child: " << PPSpace[i][j]->G->PrintGeneStateContent() << "\t" << PPSpace[i][j]->G->PrintContent(NULL, true) << endl;
+					p_id_count_++;
+					PPSpace[i][j]->Mitosis(PPSpace[nrow][ncol], p_id_count_);
+					// cout << "Parent (n): " << PPSpace[nrow][ncol]->G->PrintGeneStateContent() << "\t" << PPSpace[nrow][ncol]->G->PrintContent(NULL, false, false) << endl;
+					// cout << "Child (n): " << PPSpace[i][j]->G->PrintGeneStateContent() << "\t" << PPSpace[i][j]->G->PrintContent(NULL, false, false) << endl;
 				}
 			}
 
@@ -126,10 +126,16 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 				delete PPSpace[i][j];
 				PPSpace[i][j]=NULL;
 			}
-			else	//Update InternalState of prokaryote
+
+			else	//Update internal state of prokaryote
 			{
 				PPSpace[i][j]->G->UpdateGeneStates();
 				PPSpace[i][j]->UpdateCellCycle();
+
+				if (PPSpace[i][j]->Stage == 2)
+				{
+					PPSpace[i][j]->Replicate();
+				}
 			}
 		}
 	}
