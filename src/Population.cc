@@ -574,17 +574,10 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 			}
 
 		}
-		else	//Site is alive.
+		else
 		{
-			if(chance < death_rate)	//Death events
-			{
-				if(!PPSpace[i][j]->mutant && !PPSpace[i][j]->saved_in_graveyard)
-				{
-					delete PPSpace[i][j];
-				}
-				else	PPSpace[i][j]->alive = false;
-				PPSpace[i][j] = NULL;
-			}
+			if(chance < death_rate)	DeathOfProkaryote(i, j);	//Death events.
+
 
 			else	//Update internal state of prokaryote
 			{
@@ -600,6 +593,13 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 
 	}
 	//Do some diffusion here?
+}
+
+void Population::DeathOfProkaryote(int i, int j)
+{
+	if(!PPSpace[i][j]->mutant && !PPSpace[i][j]->saved_in_graveyard)	delete PPSpace[i][j];
+	else	PPSpace[i][j]->alive = false;
+	PPSpace[i][j] = NULL;
 }
 
 void Population::PruneFossilRecord()
