@@ -42,8 +42,10 @@ class Genome {
   iter TFBSMutate(iter ii, int* pdel_len);
 
   iter GeneDuplication(iter ii, int* pdup_len);
+  iter GeneInnovation();
   iter GeneDeletion(iter ii, int* pdel_len);
   iter TFBSDuplication(iter ii);
+  void TFBSInnovation();
   iter TFBSDeletion(iter ii);
   iter FindFirstTFBSInFrontOfGene(iter ii) const;
   iter FindRandomGenePosition() const;

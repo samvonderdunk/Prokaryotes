@@ -193,6 +193,22 @@ void Genome::MoveGenomeToChild(iter p_begin, iter p_end)	//Function gets iterato
 			it++;
 		}
 
+		//Innovations of genes and TFBSs. Note that g_length is updated at GeneDuplication() and GeneDeletion() so any position along the genome is allowed for the novel gene/TFBS.
+		if(uniform() < gene_innovation_mu)
+		{
+			// cout << "Gene innov" << endl;
+			it = GeneInnovation();
+			PotentialTypeChange(it);
+			(*pdup_length)++;
+		}
+		if(uniform() < tfbs_innovation_mu)
+		{
+			// cout << "TFBS innov" << endl;
+			TFBSInnovation();
+			(*pdup_length)++;
+		}
+
+	}	//END of mutations.
 
 	//Loop through the child genome and build the GeneTypes and GeneStates vectors.
 	it = BeadList->begin();
@@ -498,6 +514,22 @@ Genome::iter Genome::GeneDuplication(iter ii, int* pdup_len)
 	return ii;
 }
 
+Genome::iter Genome::GeneInnovation()
+{
+	Gene* gene;
+	iter it, insertsite;
+
+	gene = new Gene();
+	gene->RandomGene();
+
+	insertsite=FindRandomGenePosition();
+	insertsite=FindFirstTFBSInFrontOfGene(insertsite);
+	insertsite=BeadList->insert(insertsite, gene);
+
+	g_length++;
+	return insertsite;
+}
+
 Genome::iter Genome::GeneDeletion(iter ii, int* pdel_len)
 {
 	iter first, last, jj;
@@ -546,6 +578,22 @@ Genome::iter Genome::TFBSDuplication(iter ii)
 	return ii;
 }
 
+void Genome::TFBSInnovation()
+{
+	TFBS* tfbs;
+	iter insertsite;
+	int randpos;
+
+	tfbs = new TFBS();
+	tfbs->RandomTFBS();
+
+	randpos = (int)(uniform() * g_length);
+	insertsite = BeadList->begin();
+	advance(insertsite,randpos);
+	BeadList->insert(insertsite, tfbs);
+
+	g_length++;
+}
 
 Genome::iter Genome::TFBSDeletion(iter ii)
 {
