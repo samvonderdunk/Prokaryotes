@@ -82,50 +82,35 @@ void Genome::CloneGenome(const Genome* G_template)	//Used to copy genome of prok
 	pos_anti_ori = G_template->g_length;
 }
 
-void Genome::RemoveGenomeInParent(iter begin, iter end)	//Function gets iters from the parental genome passed (not the current genome!). Whole function is performed on the parental genome.
+void Genome::DevelopChildrenGenomes(Genome* G_replicated)	//Function gets iterators of parental genome, but copies it to child and then acts on variables of child genome.
 {
-	int type_abundance;
-
-	iter it = end;
-	it--;
-	begin--;
-	while(it != begin)
-	{
-		if(IsGene(*it))
-		{
-			type_abundance = CountTypeAbundance(abs((*it)->type));
-			if(type_abundance < 2)	LoseGeneType(abs((*it)->type));	//If some gene type was only on the new genome (i.e. new mutant) it now disappears from the parent again.
-			else	DecrementExpressionOfType(it);	//The type is not lost, but we might lose expression of the particular gene type.
-			gnr_genes--;
-		}
-
-		g_length--;
-		delete *it;
-		(*it)=NULL;	//This is needed here, because while deleting we are still checking stuff (e.g. CountTypeAbundance above). If (*it) is not specifically set as zero-pointer, the programme will try to extract its values in these functions.
-		it--;
-	}
-
-	begin++;
-	BeadList->erase(begin, end);	//Don't think it is needed to say it=BeadList->erase(begin, end);... Maybe this also makes the iterator point to NULL?
-
-	SetClaimVectors();
-
-	pos_fork = 0;	//Set the fork to the beginning (nothing is replicated).
-	assert(pos_anti_ori == g_length);
-}
-
-void Genome::MoveGenomeToChild(iter p_begin, iter p_end)	//Function gets iterators of parental genome, but copies it to child and then acts on variables of child genome.
-{
-	CopyPartOfGenome(p_begin, p_end);	//Also calculates g_length.
-
+	g_length = BeadList->size();
 	GeneTypes = new vector<int>();
 	GeneStates = new vector<int>();
 	Gene* gene;
 	int g_length_before_mut = g_length;
 	vector<bool>* MutationList;
-	int del_length, dup_length, index;
+	int del_length, dup_length, index, type_abundance;
 	int* pdup_length, * pdel_length;
 	iter it;
+
+	//Clean up the variables of the parental genome left behind.
+	it = BeadList->begin();
+	while (it != BeadList->end())
+	{
+		if(IsGene(*it))
+		{
+			type_abundance = G_replicated->CountTypeAbundance(abs((*it)->type));
+			assert(type_abundance != 0);	//We have not done any mutations yet, so each gene should still have a complementary copy in the parent.
+			G_replicated->DecrementExpressionOfType(it);
+			G_replicated->gnr_genes--;
+		}
+		G_replicated->g_length--;
+		it++;
+	}
+
+	G_replicated->SetClaimVectors();
+	G_replicated->pos_fork = 0;
 
 	if (mutations_on)	//START mutations.
 	{
@@ -247,19 +232,19 @@ void Genome::MoveGenomeToChild(iter p_begin, iter p_end)	//Function gets iterato
 
 	pos_fork = 0;	//Set the fork to the beginning (nothing is replicated).
 	pos_anti_ori = g_length;
-	// cout << "Done with mutations" << endl;
 
 }
 
 void Genome::SplitGenome(Genome* G_replicated)	//Used to split a genome upon division
 {
-	BeadList=new list<Bead*>();
 	//Find the fork with i_split.
 	iter i_split = G_replicated->BeadList->begin();
 	advance(i_split, G_replicated->pos_anti_ori);	//pos_anti_ori points to the end of the parental genome, which is now the first bead of the child genome.
-	MoveGenomeToChild(i_split, G_replicated->BeadList->end());
-	// if(Time==114) cout << "Moved genome to child" << endl;
-	G_replicated->RemoveGenomeInParent(i_split, G_replicated->BeadList->end());
+
+	BeadList=new list<Bead*>();
+	BeadList->splice(BeadList->begin(), *G_replicated->BeadList, i_split, G_replicated->BeadList->end());
+
+	DevelopChildrenGenomes(G_replicated);
 }
 
 
@@ -726,17 +711,6 @@ bool Genome::CheckSameGeneTypes(Gene* gene_ii, Gene* gene_jj)
 		if(gene_ii->binding_domain[k] != gene_jj->binding_domain[k]) genes_are_the_same = false;
 	}
 	return genes_are_the_same;
-}
-
-void Genome::LoseGeneType(int type)	//Erase this type from GeneStates and GeneTypes.
-{
-	gene_iter git = find(GeneTypes->begin(), GeneTypes->end(), type);
-	int index = distance(GeneTypes->begin(), git);
-	GeneTypes->erase(git);
-
-	git = GeneStates->begin();
-	advance(git, index);
-	GeneStates->erase(git);
 }
 
 int Genome::CountTypeAbundance(int type)

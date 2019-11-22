@@ -33,8 +33,7 @@ class Genome {
   void CopyPartOfGenomeToTemplate(iter begin, iter end, list<Bead*>* template_beadlist);
   void CloneGenome(const Genome* G_template);
 
-  void RemoveGenomeInParent(iter begin, iter end);
-  void MoveGenomeToChild(iter begin, iter end);
+  void DevelopChildrenGenomes(Genome* G_replicated);
   void SplitGenome(Genome* G_replicated);
 
   void ReplicateGenomeStep(int env);
@@ -53,7 +52,6 @@ class Genome {
   void PotentialTypeChange(iter ii);
   bool CheckSameGeneTypes(iter ii, iter jj);
   bool CheckSameGeneTypes(Gene* gene_ii, Gene* gene_jj);  //Some redundancy (forgot the coding jargon), allowing me to also check the types of two gene pointers.
-  void LoseGeneType(int type);
   int CountTypeAbundance(int type);
 
   void ReadInitialGenome();
