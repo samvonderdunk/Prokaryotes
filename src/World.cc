@@ -60,10 +60,10 @@ int main(int argc, char** argv) {
 		/* ############## Simulation ############## */
 
 		printf("\033[93m### Simulation ###\033[0m\n");
-		for(Time=0; Time<SimTime+1; Time++){	//We do one extra step, because output is generated at the beginning of a step, such that time=0 is the field as it is initialised.
+		for(Time=TimeZero; Time<SimTime+1; Time++){	//We do one extra step, because output is generated at the beginning of a step, such that time=0 is the field as it is initialised.
 			P->UpdatePopulation();		//Main next-state function, updating the population.
-
 		}
+		// cout << P->nr_birth_events << endl;
 		//Make sure that you save all possible things in the last timestep, if you did not already choose your parameters such.
 		Time--;
 		if(SimTime%TimeTerminalOutput!=0)	P->ShowGeneralProgress();
