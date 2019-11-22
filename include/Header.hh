@@ -102,12 +102,22 @@ const string genestate_file="/home/sam/Documents/Endosymbiosis/Model/Prokaryotes
 const string backup_file="";
 const string anctrace_file="";
 
+//Below is the stages as defined in the model version 2.1.
+// const bool StageTargets[4][5] = {
+//   false, false, true, false, true,      // 0 0 1 0 1    G1 -> S
+//   false, true, false, false, false,     // 0 1 0 0 0    S -> G2
+//   true, false, false, false, false,     // 1 0 0 0 0    G2 -> M
+//   true, false, false, true, true        // 1 0 0 1 1    M -> G1
+//                                         // 1-CtrA 2-GcrA 3-DnaA 4-CcrM 5-SciP
+// };
 
+//In version 2.2, they were redefined as below.
 const bool StageTargets[4][5] = {
-  false, false, true, false, true,      // 0 0 1 0 1    G1
-  false, true, false, false, false,     // 0 1 0 0 0    S
-  true, false, false, false, false,     // 1 0 0 0 0    G2
-  true, false, false, true, true        // 1 0 0 1 1    M
+  true, false, false, true, true,       // 1 0 0 1 1    G1
+  false, false, true, false, true,      // 0 0 1 0 1    S
+  false, true, false, false, false,     // 0 1 0 0 0    G2
+  true, false, false, false, false,     // 1 0 0 0 0    M
+                                        // 1-CtrA 2-GcrA 3-DnaA 4-CcrM 5-SciP
 };
 
 #endif
