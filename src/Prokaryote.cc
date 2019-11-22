@@ -82,13 +82,3 @@ void Prokaryote::UpdateCellCycle()	//Check whether changes in GeneStates make us
 		}
 	}
 }
-
-double Prokaryote::Fitness()
-{
-	double fitness = 1.0;
-	for(int i=0; i<5; i++)
-	{
-		if (G->GeneStates->at(i) != TargetExpression[i])	fitness -= 1./5.;
-	}
-	return pow(fitness,2);
-}

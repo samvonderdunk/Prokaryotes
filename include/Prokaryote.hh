@@ -10,6 +10,7 @@ class Prokaryote{
 		Genome* G;
 		int Stage;
 		bool ready_for_replication;
+		double fitness_deficit;
 
 		typedef std::list<Prokaryote*>::iterator iteragent;
 
@@ -22,7 +23,6 @@ class Prokaryote{
 		void EmptyProkaryote();
 
 		void UpdateCellCycle();
-		double Fitness();
 };
 
 #endif
