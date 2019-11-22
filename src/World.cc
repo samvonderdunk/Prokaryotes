@@ -9,7 +9,6 @@
 dsfmt_t dsfmt;
 int Time;
 int initial_seed = time(0);
-int TargetExpression[5] = {};
 string folder = "/linuxhome/tmp/sam/Prokaryotes/";
 bool mutational_neighbourhood = false;
 bool attractor_landscape = false;
@@ -65,6 +64,17 @@ int main(int argc, char** argv) {
 			P->UpdatePopulation();		//Main next-state function, updating the population.
 
 		}
+		//Make sure that you save all possible things in the last timestep, if you did not already choose your parameters such.
+		Time--;
+		if(SimTime%TimeTerminalOutput!=0)	P->ShowGeneralProgress();
+		if(SimTime%TimeSaveGrid!=0)
+		{
+			if(NR*NC > 3000)	P->PrintSampleToFile();
+			else	P->PrintFieldToFile();
+		}
+		if(SimTime%TimeSaveBackup!=0)	P->OutputBackup();
+		if(SimTime%TimePruneFossils!=0)	P->PruneFossilRecord();
+		if(SimTime%TimeOutputFossils!=0)	P->Fossils->ExhibitFossils();
 
 		printf("Simulation completed...\n\n");
 	}
@@ -85,11 +95,6 @@ void Setup(int argc, char** argv) {
 	string ReadOut, command;
 	bool project_name_found = false;
 	bool initial_seed_set = false;
-
-	// string genome_init = genome_file;
-	// printf("Genome init: %s", genome_init.c_str());
-	// string genestate_init = genestate_file;
-	// printf("Genestate init: %s", genestate_init.c_str());
 
 
 	for(int i=1;i<argc;i++)	//Loop through input arguments.
@@ -147,6 +152,8 @@ void Setup(int argc, char** argv) {
 		{
 			genome_init = argv[i+1];
 			printf("Genome input: %s\n", genome_init.c_str());
+			i++;
+			continue;
 		}
 
 		//Let user define input genestate file on the command line (again handy for snakemake). You can either define the path to a genestate file or input a letter corresponding to one of the four cell-cycle stages (G1, S, G2 or M).

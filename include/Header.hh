@@ -80,7 +80,6 @@ inline double uniform() { return dsfmt_genrand_close_open(&dsfmt); }
 
 extern int Time;
 extern int initial_seed;
-extern int TargetExpression[5];
 extern string folder;
 extern bool mutational_neighbourhood;
 extern bool attractor_landscape;

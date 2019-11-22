@@ -34,7 +34,7 @@ void Population::InitialisePopulation()
 	//Print its expression.
 	cout << "\nInitial expression = " << PP->G->PrintGeneStateContent() << endl;
 	//Print its genome.
-	cout << "Initial genome = " << PP->G->PrintContent(NULL, true) << endl;	//Pass true as argument to print the nicely colored format for the terminal output.
+	cout << "Initial genome = " << PP->G->PrintContent(NULL, true, false) << endl;	//Pass true as argument to print the nicely colored format for the terminal output.
 	//Now fill the field with this prokaryote (I guess this is less intensive then creating new randomized prokaryotes for the whole grid).
 	for(int row=0; row<NR; row++) for(int col=0; col<NC; col++){
 		p_id_count_++;	//Make sure the first individual gets p_id_count_ of 1.
@@ -362,7 +362,7 @@ void Population::ReproduceMasterGenome()
 	PP = new Prokaryote();
 	PP->InitialiseProkaryote();
 	//Print the genome to let the user be aware.
-	string Parent_Genome = PP->G->PrintContent(NULL, false);
+	string Parent_Genome = PP->G->PrintContent(NULL, false, false);
 	cout << "\nMaster genome:\t" << Parent_Genome << endl;
 	//Now make children one by one, through replication (incl. of course mutation) and print each to the terminal, before freeing the memory and reusing the pointer.
 	//Maybe this is not very efficient, since the programme will be writing between each reproduction event; but it is definitely simple.
@@ -752,7 +752,7 @@ void Population::PrintFieldToFile()
 		else{		//Print internal state and genome of prokaryote to file.
 			fprintf(f, "%s\t", PPSpace[i][j]->G->PrintGeneStateContent().c_str());
 			fprintf(f, "%s\t", PPSpace[i][j]->G->PrintGeneTypeContent().c_str());
-			fprintf(f, "%s\n", PPSpace[i][j]->G->PrintContent(NULL, false).c_str());
+			fprintf(f, "%s\n", PPSpace[i][j]->G->PrintContent(NULL, false, true).c_str());
 		}
 	}
 	fclose(f);
@@ -777,7 +777,7 @@ void Population::PrintSampleToFile()
 			else{		//Print internal state and genome of prokaryote to file.
 				fprintf(f, "%s\t", PPSpace[i%NR][j]->G->PrintGeneStateContent().c_str());
 				fprintf(f, "%s\t", PPSpace[i%NR][j]->G->PrintGeneTypeContent().c_str());
-				fprintf(f, "%s\n", PPSpace[i%NR][j]->G->PrintContent(NULL, false).c_str());
+				fprintf(f, "%s\n", PPSpace[i%NR][j]->G->PrintContent(NULL, false, true).c_str());
 			}
 			count_saved ++;
 			if(count_saved==save_number)
