@@ -12,6 +12,8 @@ class Prokaryote{
 		bool ready_for_division;
 		double fitness_deficit;
 
+		int time_replicated;
+
 		//For the fossil record.
 		int time_of_appearance;
 		unsigned long long fossil_id;	//Now it should be 64-bit (32-bit unsigned would already be about 200 times as big as the last id you get out of a 100x100 simulation of 100k AUT).

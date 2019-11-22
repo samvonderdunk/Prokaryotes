@@ -63,6 +63,7 @@ class Genome {
   void ReadInitialGeneStates();
   void InitialiseRandomGenome();
 
+  int MatchNextState(int state);
   void UpdateGeneStates();
   void SetClaimVectors();
 

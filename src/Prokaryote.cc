@@ -80,6 +80,7 @@ void Prokaryote::EmptyProkaryote()
 	alive = true;
 	fitness_deficit = 0.;
 	saved_in_graveyard = false;
+	time_replicated = 0;
 }
 
 void Prokaryote::PrintData(bool include_genome_data)
@@ -107,90 +108,74 @@ void Prokaryote::PrintData(bool include_genome_data)
 
 void Prokaryote::UpdateCellCycle()	//Check whether changes in GeneStates make us go forward in the cell cycle.
 {
-	int expression, index;
-	Genome::gene_iter git;
-	int st;
+	int s, match_next_state;
 
-	for (int s=0; s<5; s++)
+	for (s=0; s<5; s++)
 	{
 		if (s==Stage)
 		{
-			if (Stage == 4)	//If you were in Stage 4, you have to earn it again; you are set back to stage 3 and evaluated for matching stage 4 anew.
+			if (Stage == 4 || (Stage == 2 && G->pos_fork != G->pos_anti_ori))	//If you were in Stage 4, you have to earn it again; you are set back to stage 3 and evaluated for matching stage 4 anew.
+			// if (Stage == 4 || (Stage == 2 && (time_replicated < replication_time || G->pos_fork != G->pos_anti_ori)))	//Substitute for the above line to learn prokaryotes the trick of S-stage extension.
+			// if(Stage == 2 && (time_replicated < replication_time || G->pos_fork != G->pos_anti_ori))	//Prokaryotesv2.3: You don't stay in M-stage anymore, so the above lines are deprecated.
 			{
-				Stage = 3;
+				Stage--;
 				s--;	//This means we will evaluate a Stage-4 cell for Stage 4 again.
 			}
-			int match_next_state = 0;
-			for (int g=1; g<=5; g++)	//g is the type of gene that we are looking for, ie G1-G5; but these may be shuffled (or some missing) from the actual GeneStates.
-			{
-				git = find(G->GeneTypes->begin(), G->GeneTypes->end(), g);
-				if (git == G->GeneTypes->end())	expression = 0;
-				else
-				{
-					index = distance(G->GeneTypes->begin(), git);
-					expression = G->GeneStates->at(index);
-				}
 
-				if(  (expression==0 && !StageTargets[s][g-1])  ||  (expression!=0 && StageTargets[s][g-1])  )
-				{
-					match_next_state++;
-				}
-				else	break;
+			match_next_state = G->MatchNextState(s);
+
+			if (match_next_state==5)
+			{
+				Stage++;	//You have reached the next stage.
 			}
-			if (match_next_state==5)	//In principle you develop if you match your next state (and no worries if you don't immediately). When you are in M-stage, however, you should match M-stage, or you get forced back into M-stage with a fitness cost.
+
+			// else	//If you don't reach your normal next-state, we check whether you have reached the M-stage. Then you are updated to M-stage immediately. If you do not go there from Stage 3 (G2, as you should) we put your time_replicated to 0. Thus, reaching M-stage too soon will always kill you. You are not allowed to skip any of G1, S (multiple steps) and G2.
+			// {
+			// 	match_next_state = G->MatchNextState(3);	//Evaluate for M-stage.
+			// 	if (match_next_state==5)
+			// 	{
+			// 		time_replicated = 0;	//The death penalty.
+			// 		Stage = 4;
+			// 	}
+			// }
+
+			/*	//Use this code to penalize not matching your next state and if you want, to set expression to the correct state.
+			else	//Let's try to penalize everything that does not fit into our cell-cycle scheme: G1-S-S-S-S-(etc.)-G2-M-M-M-M-(mitosis)-G1-S-S-S-S...
 			{
-				if ((Stage == 2 && G->pos_fork != G->pos_anti_ori))	//Check that you are done replicating.
+				fitness_deficit += 0.01 * (5-match_next_state);
+				Stage = s+1;
+
+				git = G->GeneTypes->begin();	//Remove expression of cell-cycle genes.
+				while (git != G->GeneTypes->end())
 				{
-					fitness_deficit += 0.1;
-
-					Stage--;	//Keep cell in S- or M-stage virtually.
-
-					git = G->GeneTypes->begin();	//Remove expression of cell-cycle genes.
-					while (git != G->GeneTypes->end())
+					if (*git < 6)
 					{
-						if (*git < 6)
+						index = distance(G->GeneTypes->begin(), git);
+						G->GeneStates->at(index) = 0;
+					}
+					git++;
+				}
+
+				Genome::iter it = G->BeadList->begin();	//Now keep it in there physically.
+				while (it != G->BeadList->end())
+				{
+					if(G->IsGene(*it) && (*it)->type < 6)
+					{
+						Gene* gene = dynamic_cast<Gene*>(*it);
+						gene->expression = (StageTargets[s][gene->type-1]==true) ? 1:0;	//Set this gene to what it should be in S-stage.
+						git = find(G->GeneTypes->begin(), G->GeneTypes->end(), gene->type);
+						if(git != G->GeneTypes->end())
 						{
 							index = distance(G->GeneTypes->begin(), git);
-							G->GeneStates->at(index) = 0;
+							G->GeneStates->at(index) += gene->expression;
 						}
-						git++;
 					}
-
-					Genome::iter it = G->BeadList->begin();	//Now keep it in there physically.
-					while (it != G->BeadList->end())
-					{
-						if(G->IsGene(*it) && (*it)->type < 6)
-						{
-							Gene* gene = dynamic_cast<Gene*>(*it);
-							gene->expression = (StageTargets[s-1][gene->type-1]==true) ? 1:0;	//Set this gene to what it should be in S-stage.
-							git = find(G->GeneTypes->begin(), G->GeneTypes->end(), gene->type);
-							if(git != G->GeneTypes->end())
-							{
-								index = distance(G->GeneTypes->begin(), git);
-								G->GeneStates->at(index) += gene->expression;
-							}
-						}
-						it++;
-					}
+					it++;
 				}
-
-				Stage++;	//You have reached the next stage.
-
-				if (Stage == 3)	//If you opt out of the S-stage you better make sure that everything had a chance to mutate.
-				{
-					Genome::mut_iter mit = G->MutationList->begin();
-					while (mit != G->MutationList->end())
-					{
-						assert((*mit));
-						mit++;
-					}
-
-					delete G->MutationList;
-					G->MutationList = NULL;
-				}
-				break;		//One stage improvement is more than enough for one timestep :)
 			}
-			break;
+			*/
+
+			break;		//One stage evaluation is more than enough for one timestep :)
 		}
 	}
 }

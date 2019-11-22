@@ -981,6 +981,30 @@ void Genome::InitialiseRandomGenome()
 	SetClaimVectors();	//For each TFBS, put all bindings strengths with all genes in its claim vector.
 }
 
+int Genome::MatchNextState(int state)
+{
+	int expression, index, match_next_state = 0;
+	Genome::gene_iter git;
+
+	for (int g=1; g<6; g++)	//g is the type of gene that we are looking for, ie G1-G5; but these may be shuffled (or some missing) from the actual GeneStates.
+	{
+		git = find(GeneTypes->begin(), GeneTypes->end(), g);
+		if (git == GeneTypes->end())	expression = 0;
+		else
+		{
+			index = distance(GeneTypes->begin(), git);
+			expression = GeneStates->at(index);
+		}
+
+		if(  (expression==0 && !StageTargets[state][g-1])  ||  (expression!=0 && StageTargets[state][g-1])  )
+		{
+			match_next_state++;
+		}
+		// else	break;	//If one gene is not expressed correctly, there is no use in looking at the other genes.
+	}
+	return match_next_state;
+}
+
 void Genome::UpdateGeneStates()
 {
 	TFBS* tfbs;
