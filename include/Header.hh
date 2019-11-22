@@ -27,6 +27,8 @@ using namespace std;
 #include <typeinfo>
 #include <string>
 
+// #include "/home/sam/Programmes/nvwa-1.1/nvwa/debug_new.h"
+
 #define toDigit(c) (c-'0')  // Converts char to digit
 
 //Constants for Gene.hh

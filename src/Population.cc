@@ -1,25 +1,54 @@
 #include "Population.hh"
 
-Population::Population() {
-	int i,j;
+Population::Population()
+{
+	int i,j,n;
 	p_nr_proks_=0;
 	p_id_count_=0;
 
 	Fossils = new FossilRecord();
-	for(i=0;i<NR;i++) for(j=0;j<NC;j++){
+	for(i=0;i<NR;i++) for(j=0;j<NC;j++)
+	{
 			PPSpace[i][j]=NULL;
+	}
+	for(n=0;n<generation_sample;n++)
+	{
+		OldGeneration[n]=NULL;
 	}
 }
 
-Population::~Population() {
-	int i,j;
-	for(i=0;i<NR;i++) for(j=0;j<NC;j++){
-			if((PPSpace[i][j])!=NULL){
-				delete (PPSpace[i][j]);
-				PPSpace[i][j]=NULL;
-			}
+Population::~Population()
+{
+	int i,j,n;
+	iterpps ips;
+
+	for(i=0;i<NR;i++) for(j=0;j<NC;j++)
+	{
+		if((PPSpace[i][j])!=NULL)
+		{
+			// cout << "\nDeleting prok at " << i << ", " << j << endl;
+			// cout << "PPSpace: " << PPSpace[i][j] << " " << PPSpace[i][j]->fossil_id << endl;
+			// cout << OldGeneration[i*NC+j] << endl;
+			// if (OldGeneration[i*NC+j]!=NULL) cout << "OldGeneration: " << OldGeneration[i*NC+j] << " " << OldGeneration[i*NC+j]->fossil_id << endl;
+			// cout << PPSpace[i][j]->mutant << endl;
+			if(PPSpace[i][j]->saved_in_graveyard)	OldGeneration[i*NC+j]=NULL;
+			if(PPSpace[i][j]->mutant)	Fossils->EraseFossil(PPSpace[i][j]->fossil_id);
+			delete (PPSpace[i][j]);
+			PPSpace[i][j]=NULL;
+		}
 	}
-	delete Fossils;
+
+	for(n=0;n<generation_sample;n++)
+	{
+		if(OldGeneration[n]!=NULL)
+		{
+			if(OldGeneration[n]->mutant)	Fossils->EraseFossil(OldGeneration[n]->fossil_id);
+			delete (OldGeneration[n]);
+			OldGeneration[n]=NULL;
+		}
+	}
+
+	delete Fossils;	//This will delete the rest of FossilList in the Fossils class internally.
 	Fossils=NULL;
 }
 
