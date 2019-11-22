@@ -72,7 +72,7 @@ class Genome {
   int FindIndexOfType(int type);
 
   string PrintContent(list<Bead*>* chromosome, bool terminal, bool only_parent);
-  string PrintGeneStateContent();
+  string PrintGeneStateContent(bool sorted);
   string PrintGeneTypeContent();
 };
 #endif

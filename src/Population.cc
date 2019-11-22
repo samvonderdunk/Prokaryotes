@@ -32,7 +32,7 @@ void Population::InitialisePopulation()
 	PP = new Prokaryote();
 	PP->InitialiseProkaryote();
 	//Print its expression.
-	cout << "\nInitial expression = " << PP->G->PrintGeneStateContent() << endl;
+	cout << "\nInitial expression = " << PP->G->PrintGeneStateContent(false) << endl;
 	//Print its genome.
 	cout << "Initial genome = " << PP->G->PrintContent(NULL, true, false) << endl;	//Pass true as argument to print the nicely colored format for the terminal output.
 	//Now fill the field with this prokaryote (I guess this is less intensive then creating new randomized prokaryotes for the whole grid).
@@ -43,7 +43,11 @@ void Population::InitialisePopulation()
 		PP_Copy->Ancestor = NULL;	//Null-pointer tells me the cell was initialised.
 		PPSpace[row][col] = PP_Copy;
 		Fossils->BuryFossil(PPSpace[row][col]);
-		if(p_id_count_<=generation_sample)	OldGeneration[p_id_count_-1] = PPSpace[row][col];	//Put a subset of prokaryote pointers in the OldGeneration array.
+		if(p_id_count_<=generation_sample)
+		{
+			OldGeneration[p_id_count_-1] = PPSpace[row][col];	//Put a subset of prokaryote pointers in the OldGeneration array.
+			PPSpace[row][col]->saved_in_graveyard = true;
+		}
 	}
 
 	delete PP;	//I cannot delete PP_Copy, because each is actually turned into one of grid spaces. I can however delete this single bit of memory.
@@ -54,7 +58,7 @@ void Population::ContinuePopulationFromBackup()
 {
 	ReadBackupFile();
 	ReadAncestorFile();	//Currently, the fossil_ids are missing from the backup-file so it is impossible to link the fossils to live prokaryotes. But in the new version this will be possible.
-	PruneFossilRecord();
+	// PruneFossilRecord();
 }
 
 void Population::ReadBackupFile()
@@ -64,9 +68,8 @@ void Population::ReadBackupFile()
 	char* data_element;
 	string::iterator sit;
 	Genome::iter it;
-	int reading = 1;	//0 - nothing, 1 - GeneStates, 2 - GeneTypes, 3 - Genome, 4 - Prokaryote properties, 5 - Gene expression.
-	int read_integer = 0, index, begin_data, end_data, counter, success, stage, pfork, panti_ori;
-	bool is_mutant, is_mutant_child;
+	int read_integer = 0, index, begin_data, end_data, counter, success, stage, pfork, panti_ori, temp_is_mutant;
+	bool is_mutant;
 	unsigned long long prok_id;
 	double deficit;
 	Prokaryote* PP;
@@ -157,12 +160,13 @@ void Population::ReadBackupFile()
 			data_element = strtok((char*)data.c_str(),"\t");
 			while(data_element != NULL)
 			{
-				success = sscanf(data_element, "%d %lf %d %d %llu %d %d", &stage, &deficit, &pfork, &panti_ori, &prok_id, &is_mutant, &is_mutant_child);
-				if(success != 7)
+				success = sscanf(data_element, "%d %lf %d %d %llu %d", &stage, &deficit, &pfork, &panti_ori, &prok_id, &temp_is_mutant);
+				if(success != 6)
 				{
 					cerr << "Could not find sufficient information for this prokaryote. Backup file potentially corrupt.\n" << endl;
 					exit(1);
 				}
+				is_mutant = temp_is_mutant;
 				data_element = strtok(NULL, "\t");
 				PP->Stage = stage;
 				PP->fitness_deficit = deficit;
@@ -170,7 +174,6 @@ void Population::ReadBackupFile()
 				PP->G->pos_anti_ori = panti_ori;
 				PP->fossil_id = prok_id;
 				PP->mutant = is_mutant;
-				PP->mutant_child = is_mutant_child;
 				if (prok_id > p_id_count_) p_id_count_ = prok_id;
 			}
 
@@ -184,45 +187,50 @@ void Population::ReadBackupFile()
 			{
 				if(*sit != ' ')
 				{
-					while(!PP->G->IsGene(*it))	it++;	//Go through beads until you hit the next gene.
+					while(!PP->G->IsGene(*it))
+					{
+						it++;	//Go through beads until you hit the next gene.
+					}
+
 					gene = dynamic_cast<Gene*>(*it);
 					gene->expression = (int)*sit - 48;
 				}
+				else	it++;
 				sit++;
 			}
 
-			if(PP->Stage == 2)	//Not sure if this is the right condition.
-			{
-				PP->G->MutationList = new vector<bool>(PP->G->pos_anti_ori);	//If you initiate MutationList during the programme (i.e. first time you get to ReplicateGenomeStep()), you will actually just make the MutationList the same length as g_length. But now we are reading in prokaryotes that have already replicated some beads, so that there g_length is longer and does not match the MutationList data in the backup file.
-
-				begin_data = line.find_last_of("{");
-				end_data = line.find_last_of("}");
-				data = line.substr(begin_data+1, end_data-begin_data-3);	//The -3 is very strange (see how it was -2 above..) but seems to work now.
-				sit = data.begin();
-				counter = 0;
-				read_integer = 0;
-
-				while (sit != data.end())
-				{
-					if (*sit == ' ')
-					{
-						if(counter == 0)	PP->G->deletion_length = read_integer;
-						else	PP->G->MutationList->at(counter-1) = (read_integer==1) ? true:false;
-						read_integer = 0;
-						counter++;
-					}
-					else	//We are looking at a number supposedly.
-					{
-						read_integer *= 10;
-						read_integer += (int)*sit - 48;
-					}
-					sit++;
-				}
-
-				PP->G->MutationList->at(counter-1) = (read_integer==1) ? true:false;
-				read_integer = 0;
-
-			}
+			// if(PP->Stage == 2)	//Not sure if this is the right condition.
+			// {
+			// 	PP->G->MutationList = new vector<bool>(PP->G->pos_anti_ori);	//If you initiate MutationList during the programme (i.e. first time you get to ReplicateGenomeStep()), you will actually just make the MutationList the same length as g_length. But now we are reading in prokaryotes that have already replicated some beads, so that there g_length is longer and does not match the MutationList data in the backup file.
+			//
+			// 	begin_data = line.find_last_of("{");
+			// 	end_data = line.find_last_of("}");
+			// 	data = line.substr(begin_data+1, end_data-begin_data-3);	//The -3 is very strange (see how it was -2 above..) but seems to work now.
+			// 	sit = data.begin();
+			// 	counter = 0;
+			// 	read_integer = 0;
+			//
+			// 	while (sit != data.end())
+			// 	{
+			// 		if (*sit == ' ')
+			// 		{
+			// 			if(counter == 0)	PP->G->deletion_length = read_integer;
+			// 			else	PP->G->MutationList->at(counter-1) = (read_integer==1) ? true:false;
+			// 			read_integer = 0;
+			// 			counter++;
+			// 		}
+			// 		else	//We are looking at a number supposedly.
+			// 		{
+			// 			read_integer *= 10;
+			// 			read_integer += (int)*sit - 48;
+			// 		}
+			// 		sit++;
+			// 	}
+			//
+			// 	PP->G->MutationList->at(counter-1) = (read_integer==1) ? true:false;
+			// 	read_integer = 0;
+			//
+			// }
 
 			PP->G->SetClaimVectors();
 
@@ -286,7 +294,7 @@ void Population::ReadAncestorFile()
 		ip = Fossils->FossilList.begin();
 		while (ip != Fossils->FossilList.end())
 		{
-			if ((*ip)->fossil_id == ID)	//Then we have found a live prokaryote in our ancestor file.
+			if ((*ip)->fossil_id == ID)	//Then we have found a live prokaryote in our ancestor file, because it will have to be added to the FossilRecord from the backup file. For these guys we only have to find its ancestor in the FossilList (all other data has been read from the backup-file).
 			{
 				count_alive++;
 				(*ip)->time_of_appearance = TimeOA;
@@ -348,6 +356,7 @@ void Population::ReadAncestorFile()
 			PP->G->GeneTypes = new vector<int>();
 			PP->G->GeneStates = new vector<int>();
 			PP->G->ReadBeadsFromString(data);
+			PP->G->pos_anti_ori = PP->G->g_length;	//Otherwise the function PrintContent(NULL, false, true) (i.e. printing only the parental genome to a file) while think the parental genome is non-existent (pos_anti_or = 0).
 			Fossils->BuryFossil(PP);
 		}
 
@@ -512,7 +521,18 @@ void Population::ExploreAttractorLandscape()
 
 void Population::UpdatePopulation()	//This is the main next-state function.
 {
-	int reps = 0;
+	int update_order[NR*NC];
+	int u, i, j, nrow, ncol, random_neighbour, ni, nj;
+	double chance;
+
+	if(Time==TimeZero)	//Initialise some of my output stats for the first time.
+	{
+		nr_birth_events = 0;
+		nr_first_births = 0;
+		cum_time_alive = 0;
+		cum_fit_def = 0.0;
+	}
+
 	if(Time%TimeSaveGrid==0)
 	{
 		if(NR*NC > 3000)	PrintSampleToFile();
@@ -532,16 +552,34 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 		}
 	}
 
-	int update_order[NR*NC];
-	for(int u=0; u<NR*NC; u++) update_order[u]=u;
+	nr_birth_events = 0;
+	nr_first_births = 0;
+	cum_time_alive = 0;	//Store the total time that prokaryotes undergoing mitosis are alive (used to extract the average length of their life cycle).
+	cum_fit_def = 0.0;
+
+	for(u=0; u<NR*NC; u++) update_order[u]=u;
 	random_shuffle(&update_order[0], &update_order[NR*NC]);		//Is also set by initial_seed through srand(initial_seed); see World.cc
 
-	for(int u=0; u<NR*NC; u++)		//Go through the field: birth, death (and later possibly diffusion).
+	for(u=0; u<NR*NC; u++)		//Go through the field: birth, death (and later possibly diffusion).
 	{
-		int i = update_order[u]/NR;	//Row index.
-		int j = update_order[u]%NR;	//Column index.
-		double chance = uniform();
+		i = update_order[u]/NC;	//Row index.
+		j = update_order[u]%NC;	//Column index.
+		chance = uniform();
 
+		// if (i == 10 && j == 10)
+		// {
+		// 	if(PPSpace[i][j] == NULL)	cout << "\nEmpty\n" << endl;
+		// 	else	PPSpace[i][j]->PrintData(true);
+		// }
+
+		// if (PPSpace[i][j]!= NULL){
+		// 	if(PPSpace[i][j]->fossil_id == 3)	PPSpace[i][j]->PrintData(true);
+		// }
+
+		// if(PPSpace[i][j]!=NULL)	PPSpace[i][j]->PrintData(true);
+		// else	cout << "Empty" << endl;
+
+		//Prokaryotesv2.3: Nothing can happen on an empty site; mitosis now takes place from the cell that is in M-stage.
 		if (PPSpace[i][j]==NULL)	//Site is empty.
 		{
 			int random_neighbour = (int)(uniform()*9);
@@ -562,14 +600,18 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 				//Replication events
 				if (PPSpace[nrow][ncol]->ready_for_division && chance < (repl_rate<PPSpace[nrow][ncol]->fitness_deficit?0:1)*pow(repl_rate - PPSpace[nrow][ncol]->fitness_deficit,2))	//Only previously flagged individuals get to replicate (i.e. not the ones that acquired the M-stage only this timestep).
 				{
-					// cout << "Parent (2n): " << PPSpace[nrow][ncol]->G->PrintGeneStateContent() << "\t" << PPSpace[nrow][ncol]->G->PrintContent(NULL, false, false) << endl;
+					if(PPSpace[nrow][ncol]->nr_offspring == 0)
+					{
+						cum_time_alive += Time - PPSpace[nrow][ncol]->time_of_appearance;
+						nr_first_births++;
+					}
+					cum_fit_def += PPSpace[nrow][ncol]->fitness_deficit;
+
 					PPSpace[i][j] = new Prokaryote();
 					p_id_count_++;
 					PPSpace[i][j]->Mitosis(PPSpace[nrow][ncol], p_id_count_);
-					// cout << "Parent (n): " << PPSpace[nrow][ncol]->G->PrintGeneStateContent() << "\t" << PPSpace[nrow][ncol]->G->PrintContent(NULL, false, false) << endl;
-					// cout << "Child (n): " << PPSpace[i][j]->G->PrintGeneStateContent() << "\t" << PPSpace[i][j]->G->PrintContent(NULL, false, false) << endl;
 					if(PPSpace[i][j]->mutant)	Fossils->BuryFossil(PPSpace[i][j]);
-					reps++;
+					nr_birth_events++;
 				}
 			}
 
@@ -671,7 +713,6 @@ void Population::PruneFossilRecord()
 	AllFossilIDs.sort();
 	AllFossilIDs.unique();
 
-
 	// Delete all in FossilList that are not in AllFossilIDs (unless they are still living):
 	cout << "ID count: " << p_id_count_ << endl;
 	cout << "Before pruning: " << (*Fossils).FossilList.size() << endl;
@@ -692,6 +733,7 @@ void Population::PruneFossilRecord()
 			++ip;
 		}
 	}
+
 	AllFossilIDs.clear();
 	cout << "After pruning: " << (*Fossils).FossilList.size() << endl;
 }
@@ -750,7 +792,7 @@ void Population::PrintFieldToFile()
 		 	fprintf(f, "0\n");
 		}
 		else{		//Print internal state and genome of prokaryote to file.
-			fprintf(f, "%s\t", PPSpace[i][j]->G->PrintGeneStateContent().c_str());
+			fprintf(f, "%s\t", PPSpace[i][j]->G->PrintGeneStateContent(false).c_str());
 			fprintf(f, "%s\t", PPSpace[i][j]->G->PrintGeneTypeContent().c_str());
 			fprintf(f, "%s\n", PPSpace[i][j]->G->PrintContent(NULL, false, true).c_str());
 		}
@@ -775,7 +817,7 @@ void Population::PrintSampleToFile()
 			 	fprintf(f, "0\n");
 			}
 			else{		//Print internal state and genome of prokaryote to file.
-				fprintf(f, "%s\t", PPSpace[i%NR][j]->G->PrintGeneStateContent().c_str());
+				fprintf(f, "%s\t", PPSpace[i%NR][j]->G->PrintGeneStateContent(false).c_str());
 				fprintf(f, "%s\t", PPSpace[i%NR][j]->G->PrintGeneTypeContent().c_str());
 				fprintf(f, "%s\n", PPSpace[i%NR][j]->G->PrintContent(NULL, false, true).c_str());
 			}
@@ -807,7 +849,7 @@ void Population::OutputBackup()
 		}
 		else	//Print internal state and genome of prokaryote to file.
 		{
-			fprintf(f, "%s\t", PPSpace[i][j]->G->PrintGeneStateContent().c_str());
+			fprintf(f, "%s\t", PPSpace[i][j]->G->PrintGeneStateContent(false).c_str());
 			fprintf(f, "%s\t", PPSpace[i][j]->G->PrintGeneTypeContent().c_str());
 			fprintf(f, "%s\t", PPSpace[i][j]->G->PrintContent(NULL, false, false).c_str());
 			fprintf(f, "[%d %f %d %d %llu %d %d]\t", PPSpace[i][j]->Stage, PPSpace[i][j]->fitness_deficit, PPSpace[i][j]->G->pos_fork, PPSpace[i][j]->G->pos_anti_ori, PPSpace[i][j]->fossil_id, PPSpace[i][j]->mutant, PPSpace[i][j]->mutant_child);
@@ -849,32 +891,31 @@ void Population::ShowGeneralProgress()
 
 	for (int i=0; i<NR; i++) for(int j=0; j<NC; j++)
 	{
-		if (Time != 0 && (i*NR + j) < generation_sample)
+		if (Time != 0 && (i*NC + j) < generation_sample)
 		{
-			if(OldGeneration[i*NR+j] != NULL)
+			if(OldGeneration[i*NC+j] != NULL)
 			{
 				if  (PPSpace[i][j] != NULL)
 				{
-
-					pop_distance += MatrixDistance(OldGeneration[i*NR+j], PPSpace[i][j]);	//If the square was or is empty, it is not included in the calculation of pop_distance. GenomeToNetwork() should return pointers to 2D arrays.
+					pop_distance += MatrixDistance(OldGeneration[i*NC+j], PPSpace[i][j]);	//If the square was or is empty, it is not included in the calculation of pop_distance. GenomeToNetwork() should return pointers to 2D arrays.
 					live_comparisons++;
 				}
 				//OldGeneration[i*NR+j] is an actual prokaryote; before we overwrite we have to see whether it is time to completely delete this guy from all records (when it is not a mutant and not alive, thus not in the fossilrecord) or whether we just stop saving it in the graveyard (allowing the fossilrecord to decide whether it is still interesting for the geneology).
-				if(!OldGeneration[i*NR+j]->mutant && !OldGeneration[i*NR+j]->alive)
+				if(!OldGeneration[i*NC+j]->mutant && !OldGeneration[i*NC+j]->alive)
 				{
-					delete OldGeneration[i*NR+j];	//If this fellow was dead, remove the grave if it is not interesting for the fossil record.
-					OldGeneration[i*NR+j]=NULL;
+					delete OldGeneration[i*NC+j];	//If this fellow was dead, remove the grave if it is not interesting for the fossil record.
+					OldGeneration[i*NC+j]=NULL;
 				}
-				else	OldGeneration[i*NR+j]->saved_in_graveyard = false;	//We have to free them from this constrain; otherwise they can never be thrown out of the fossil record.
+				else	OldGeneration[i*NC+j]->saved_in_graveyard = false;	//We have to free them from this constrain; otherwise they can never be thrown out of the fossil record.
 			}
-			OldGeneration[i*NR+j] = PPSpace[i][j];	//Update OldGeneration for the next ShowGeneralProgress. We also do this if one of these pointers was NULL.
+			OldGeneration[i*NC+j] = PPSpace[i][j];	//Update OldGeneration for the next ShowGeneralProgress. We also do this if one of these pointers was NULL.
 			if(PPSpace[i][j] != NULL)	PPSpace[i][j]->saved_in_graveyard = true;	//Even if it dies, it will be kept around at least until the next generation has been compared to it (or longer if it is interesting for the fossil record).
 
-			if ((i*NR + j) < pow(generation_sample, 0.5))
+			if ((i*NC + j) < pow(generation_sample, 0.5))	//In a 100x100 grid, the entire first row (100 individuals) will be compared amongst themselves.
 			{
 				for (int ii=0; ii<NR; ii++)	for(int jj=0; jj<NC; jj++)
 				{
-					if ((ii*NR + jj) < pow(generation_sample, 0.5))
+					if ((ii*NC + jj) < pow(generation_sample, 0.5))
 					{
 						if(PPSpace[i][j] != NULL && PPSpace[ii][jj] != NULL)
 						{
@@ -884,7 +925,6 @@ void Population::ShowGeneralProgress()
 					}
 				}
 			}
-
 		}
 
 		if (PPSpace[i][j]!=NULL)
@@ -894,7 +934,7 @@ void Population::ShowGeneralProgress()
 		}
 	}
 
-	cout << "T " << Time << "\t() " << alive << "\t\tD " << stages[0] << "\tG1 " << stages[1] << "\tS " << stages[2] << "\tG2 " << stages[3] << "\tM " << stages[4] << "\tD(n) " << pop_distance/live_comparisons << "\tMSD(n) " << pop_msd/present_alives << endl;	//This will actually print during the programme, in contrast to printf().
+	cout << "T " << Time << "\t() " << alive << "\t\tD " << stages[0] << "\tG1 " << stages[1] << "\tS " << stages[2] << "\tG2 " << stages[3] << "\tM " << stages[4] << "\tReps " << nr_birth_events << "\tFitD " << (double)cum_fit_def/nr_birth_events << "\tCycleLen " << (double)cum_time_alive/nr_first_births << "\tDist " << pop_distance/live_comparisons << "\tMSD " << pop_msd/present_alives << endl;	//This will actually print during the programme, in contrast to printf().
 
 	if (alive==0)
 	{

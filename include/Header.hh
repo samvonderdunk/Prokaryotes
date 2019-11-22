@@ -92,14 +92,14 @@ extern string backup_reboot;
 extern string anctrace_reboot;
 extern bool mutations_on;
 
-const string genome_file="/home/sam/Documents/Endosymbiosis/Model/Prokaryotes1.0/input/Caulobacter_SO_genome.g";
+// const string genome_file="/home/sam/Documents/Endosymbiosis/Model/Prokaryotes/input/Caulobacter_SO_genome.g";
 //const string genome_file="/home/sam/Documents/Endosymbiosis/Model/Projects/Caulobacter_Alpha/S107/MA_100k.g";
-const string genestate_file="/home/sam/Documents/Endosymbiosis/Model/Prokaryotes1.0/input/M_stage_genestates.g";
+// const string genestate_file="/home/sam/Documents/Endosymbiosis/Model/Prokaryotes/input/M_stage_genestates.g";
 //const string genestate_file="/home/sam/Documents/Endosymbiosis/Model/Projects/Caulobacter_Alpha/S107/MA_100k_MA_expr.g";
-// const string backup_file="/hosts/linuxhome/mutant9/tmp/sam/Prokaryotes/Caulobacter_crescentusR1/backups/backup01000000.txt";
-// const string anctrace_file="/hosts/linuxhome/mutant9/tmp/sam/Prokaryotes/Caulobacter_crescentusR1/ancestors/anctrace01000000.txt";
-//const string genome_file="";
-//const string genestate_file="";
+// const string backup_file="/hosts/linuxhome/mutant30/tmp/sam/Prokaryotes/Generatio_Spontanea2/backups/backup00090000.txt";
+// const string anctrace_file="/hosts/linuxhome/mutant30/tmp/sam/Prokaryotes/Generatio_Spontanea2/ancestors/anctrace00090000.txt";
+const string genome_file="/home/sam/Documents/Endosymbiosis/Model/Projects/Pelagibacter_ubique/Pelagibacter_vitrinis.g";
+const string genestate_file="";
 const string backup_file="";
 const string anctrace_file="";
 

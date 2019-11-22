@@ -659,7 +659,7 @@ void Genome::ReadBeadsFromString(string genome)
 	{
 		if(bead[1] == 'G')	//Bead is a gene
 		{
-			buffer = new char();
+			buffer = new char[binding_length+2];	//The character array needs to be longer than the actual number of characters is should hold. In this case (and the one below) I think it also happens that the last ')' is stored in the array; which is nice because I use it below to know that bitstring is finished.
 			int success = sscanf(bead, "(G%d:%d:%d:%s)", &type, &threshold, &activity, buffer);
 			if(success != 4) cerr << "Could not find sufficient information for this gene. Genome file potentially corrupt. \n" << endl;
 			q = 0;
@@ -668,7 +668,7 @@ void Genome::ReadBeadsFromString(string genome)
 				bitstring[q] = (buffer[q]=='1');	//Easiest way I could think of to convert a character to a boolean; (bool)buffer[q] always returns 1 (whether '1' or '0')!
 				q++;
 			}
-			gene = new Gene(type, threshold, activity, bitstring, 0);	//We initialise with zero expression, but these should be updated with the first round of UpdateGeneStates().
+			gene = new Gene(type, threshold, activity, bitstring, (abs(type)<6));	//We initialise with zero expression, but these should be updated with the first round of UpdateGeneStates().
 			index = FindIndexOfType(abs(type));
 			if(index == -1)	//Type not found in GeneTypes, so add an element.
 			{
@@ -682,7 +682,8 @@ void Genome::ReadBeadsFromString(string genome)
 					}
 					else
 					{
-						GeneStates->push_back((int)(uniform()*2));	//For the genes other than the five main TFs we randomly set the expression.
+						GeneStates->push_back(0);
+						// GeneStates->push_back((int)(uniform()*2));	//For the genes other than the five main TFs we randomly set the expression.
 					}
 				}
 			}
@@ -695,11 +696,12 @@ void Genome::ReadBeadsFromString(string genome)
 			(*BeadList).push_back(gene);
 			gnr_genes++;
 			g_length++;
-			delete buffer;	//I think this prevents a memory leak. Otherwise buffer simply frees up new memory the next time it says "buffer = new char()". Because I did not use "new []" to create the variable, I should not use "delete []" to free up the memory.
+			delete [] buffer;	//I think this prevents a memory leak. Otherwise buffer simply frees up new memory the next time it says "buffer = new char()". Because I did not use "new []" to create the variable, I should not use "delete []" to free up the memory.
+			buffer = NULL;
 		}
 		else	//Bead is a tfbs
 		{
-			buffer = new char();
+			buffer = new char[binding_length+2];
 			int success = sscanf(bead, "(%d:%s)", &activity, buffer);
 			if(success != 2) cerr << "Could not find sufficient information for this TFBS. Genome file potentially corrupt. \n" << endl;
 			q = 0;
@@ -711,7 +713,8 @@ void Genome::ReadBeadsFromString(string genome)
 			tfbs = new TFBS(1, activity, bitstring);
 			(*BeadList).push_back(tfbs);
 			g_length++;
-			delete buffer;
+			delete [] buffer;
+			buffer = NULL;
 		}
 		bead = strtok(NULL, ".");
 	}
@@ -756,8 +759,6 @@ void Genome::InitialiseRandomGenome()
 
 	Gene* gene;
 	TFBS* tfbs;
-	int tfbs_type=1, activity, threshold;		//"tfbs_type=0": Binding is defined by bitstring so type does not matter anymore.
-	bool binding_section[binding_length];
 
 	//For now, I don't mind that genomes are ordered by gene type.
 	for (int gene_type=1; gene_type<=init_nr_gene_types; gene_type++)
@@ -766,17 +767,22 @@ void Genome::InitialiseRandomGenome()
 		//Define its tfbs's.
 		for (int j=0; j<init_nr_tfbs_per_gene; j++)
 		{
-			activity = (uniform()>0.5) ? -1 : 1;
-			for (int k=0; k<binding_length; k++)	binding_section[k] = (uniform()>0.5) ? true : false;
-			tfbs = new TFBS(tfbs_type, activity, binding_section);
+			// activity = (uniform()>0.5) ? -1 : 1;
+			// for (int k=0; k<binding_length; k++)	binding_section[k] = (uniform()>0.5) ? true : false;
+			// tfbs = new TFBS(tfbs_type, activity, binding_section);
+			tfbs = new TFBS();
+			tfbs->RandomTFBS();
 			(*BeadList).push_back(tfbs);
 			g_length++;
 		}
 
 		//Define the gene itself. Here the type matters, and this is the only case where we first want to say that it is a particular type and then make sure that it has a unique bitstring. This bitstring may mutate, in which case we should track it to know whether it is one of the five main types. Conversely, I could say that the five main types are always defined by five particular genes. If these genes the definition of the type also changes. Other genes will be of different types until they happen to randomly attain the same properties as one of the original five genes, in which case they are set to that type. All this is important for duplication and deletion events.
-		threshold = (int)(uniform()*(2*WeightRange+1) - (int)WeightRange);	//Threshold between -3 and 3 (including these borders).
-		activity = (uniform()>0.5) ? -1 : 1;
-		for (int k=0; k<binding_length; k++)	binding_section[k] = (uniform()>0.5) ? true : false;
+		// threshold = (int)(uniform()*(2*WeightRange+1) - (int)WeightRange);	//Threshold between -3 and 3 (including these borders).
+		// activity = (uniform()>0.5) ? -1 : 1;
+		// for (int k=0; k<binding_length; k++)	binding_section[k] = (uniform()>0.5) ? true : false;
+		gene = new Gene();
+		gene->RandomGene();
+
 		//Check that we have not initiated a gene of the same type
 		iter jj = BeadList->begin();
 		while(jj != BeadList->end())
@@ -784,18 +790,14 @@ void Genome::InitialiseRandomGenome()
 			if(IsGene(*jj))
 			{
 				Gene* check_gene = dynamic_cast<Gene*>(*jj);
-				bool genes_are_the_same = true;		//Prove me wrong!
-				if(activity != check_gene->activity) genes_are_the_same = false;
-				for (int k=0; k<binding_length; k++)
-				{
-					if(binding_section[k] != check_gene->binding_domain[k]) genes_are_the_same = false;
-				}
+				bool genes_are_the_same = CheckSameGeneTypes(gene, check_gene);
 
 				if(genes_are_the_same)
 				{
-					printf("Had to remake G%d because it is the same as G%d!\n", gene_type, check_gene->type);
 					for(int t=0; t<init_nr_tfbs_per_gene; t++)	(*BeadList).pop_back();
-					g_length -= init_nr_gene_types;
+					// g_length -= init_nr_gene_types;
+					g_length -= init_nr_tfbs_per_gene;
+					delete gene;
 					gene_type--;
 					break;
 				}
@@ -803,7 +805,8 @@ void Genome::InitialiseRandomGenome()
 			jj++;
 		}
 
-		gene = new Gene(gene_type, threshold, activity, binding_section, 0);	//We should only get here if the new gene is not the same as one of the old genes.
+		gene->type = gene_type;
+		// gene = new Gene(gene_type, threshold, activity, binding_section, 0);	//We should only get here if the new gene is not the same as one of the old genes.
 		(*BeadList).push_back(gene);
 		gnr_genes++;
 		g_length++;
@@ -1144,16 +1147,41 @@ string Genome::PrintContent(list<Bead*> * chromosome, bool terminal, bool only_p
 	return GenomeContent;
 }
 
-string Genome::PrintGeneStateContent()
+string Genome::PrintGeneStateContent(bool sorted)
 {
+	gene_iter git;
+	int index, count_types=0;
 	string GeneStateContent = "[";
-	for (int i=0; (size_t)i<GeneStates->size(); i++)
+
+	if (!sorted)
 	{
-		stringstream stringtemp;
-		stringtemp << GeneStates->at(i);
-		if((size_t)i<GeneStates->size()-1) GeneStateContent += stringtemp.str() + ", ";
-		else GeneStateContent += stringtemp.str() + "]";
-		stringtemp.clear();
+		for (int i=0; (size_t)i<GeneStates->size(); i++)
+		{
+			stringstream stringtemp;
+			stringtemp << GeneStates->at(i);
+			if((size_t)i<GeneStates->size()-1) GeneStateContent += stringtemp.str() + ", ";
+			else GeneStateContent += stringtemp.str() + "]";
+			stringtemp.clear();
+		}
+	}
+	else
+	{
+		for (int x=1; x<101; x++)
+		{
+			git = find(GeneTypes->begin(), GeneTypes->end(), x);
+			if (git != GeneTypes->end())	//Then we have this type in our genome.
+			{
+				index = distance(GeneTypes->begin(), git);
+				git = GeneStates->begin();
+				advance(git, index);
+				stringstream stringtemp;
+				stringtemp << (*git);
+				if((size_t)count_types < GeneStates->size()-1) GeneStateContent += stringtemp.str() + ", ";
+				else GeneStateContent += stringtemp.str() + "]";
+				stringtemp.clear();
+				count_types++;
+			}
+		}
 	}
 	return GeneStateContent;
 }

@@ -21,7 +21,13 @@ class Population
 		typedef std::list<int>::iterator iter;
 		typedef std::list<Prokaryote*>::iterator iterpps;
 
-		int p_id_count_;	// Counter for all agents
+		unsigned long long p_id_count_;	// Counter for all agents
+
+		//Variables for output.
+		int nr_birth_events;
+		int nr_first_births;
+		int cum_time_alive;
+		double cum_fit_def;
 
 		//These are for looking at the occurrence of evolution.
 		Prokaryote* OldGeneration[generation_sample];

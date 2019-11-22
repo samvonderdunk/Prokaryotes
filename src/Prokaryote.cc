@@ -69,6 +69,7 @@ void Prokaryote::EmptyProkaryote()
 	//Starts at first stage again
 	Stage = 0;
 	ready_for_division = false;
+	nr_offspring = 0;
 	fossil_id = 0;
 	time_of_appearance = 0;
 	Ancestor = NULL;
@@ -96,8 +97,8 @@ void Prokaryote::PrintData(bool include_genome_data)
 	printf("----------------------------------------------\n");
 	if(include_genome_data)
 	{
-		printf("Genome:\n%s\n", G->PrintContent(NULL, false, false).c_str());
-		printf("GeneStates:\n%s\n", G->PrintGeneStateContent().c_str());
+		printf("Genome:\n%s\n", G->PrintContent(NULL, true, false).c_str());
+		printf("GeneStates:\n%s\n", G->PrintGeneStateContent(false).c_str());
 		printf("GeneTypes:\n%s\n", G->PrintGeneTypeContent().c_str());
 	}
 	printf("##############################################\n");
