@@ -572,6 +572,7 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 	if(Time%TimeOutputFossils==0 && Time!=0)	Fossils->ExhibitFossils();
 	if(Time%TimeSaveBackup==0 && Time!=0)	OutputBackup();
 
+	/*
 	for(int i=0; i<NR; i++) for(int j=0; j<NC; j++)		//Here we flag all individuals that are eligible for replication. Getting to the M-stage in this timestep only makes you eligible for replication in the next timestep.
 	{
 		if(PPSpace[i][j] != NULL)
@@ -580,6 +581,7 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 			else	PPSpace[i][j]->ready_for_division = false;
 		}
 	}
+	*/
 
 	nr_birth_events = 0;
 	nr_first_births = 0;
@@ -658,6 +660,16 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 				if (PPSpace[i][j]->Stage == 2)
 				{
 					PPSpace[i][j]->Replicate();
+					PPSpace[i][j]->time_replicated++;
+				}
+				//Prokaryotesv2.3: Stage 4 can be reached at any point in the cell-cycle (e.g. from Stage 1 or Stage 3), which puts you straight at the spot: did you replicate long enough? If not, you die; if yes, you replicate.
+				else if(PPSpace[i][j]->Stage == 4)
+				{
+					PPSpace[i][j]->ready_for_division = true;
+				}
+				else
+				{
+					PPSpace[i][j]->ready_for_division = false;
 				}
 			}
 		}
@@ -864,7 +876,6 @@ void Population::PrintSampleToFile()
 void Population::OutputBackup()
 {
 	Genome::iter it;
-	Genome::mut_iter mit;
 	Gene* gene;
 	FILE* f;
 	char OutputFile[800];
@@ -881,7 +892,7 @@ void Population::OutputBackup()
 			fprintf(f, "%s\t", PPSpace[i][j]->G->PrintGeneStateContent(false).c_str());
 			fprintf(f, "%s\t", PPSpace[i][j]->G->PrintGeneTypeContent().c_str());
 			fprintf(f, "%s\t", PPSpace[i][j]->G->PrintContent(NULL, false, false).c_str());
-			fprintf(f, "[%d %f %d %d %llu %d %d]\t", PPSpace[i][j]->Stage, PPSpace[i][j]->fitness_deficit, PPSpace[i][j]->G->pos_fork, PPSpace[i][j]->G->pos_anti_ori, PPSpace[i][j]->fossil_id, PPSpace[i][j]->mutant, PPSpace[i][j]->mutant_child);
+			fprintf(f, "[%d %f %d %d %llu %d]\t", PPSpace[i][j]->Stage, PPSpace[i][j]->fitness_deficit, PPSpace[i][j]->G->pos_fork, PPSpace[i][j]->G->pos_anti_ori, PPSpace[i][j]->fossil_id, PPSpace[i][j]->mutant);
 			fprintf(f, "{");
 			it = PPSpace[i][j]->G->BeadList->begin();
 			while (it != PPSpace[i][j]->G->BeadList->end())
@@ -893,18 +904,7 @@ void Population::OutputBackup()
 				}
 				it++;
 			}
-			if(PPSpace[i][j]->G->MutationList == NULL)	fprintf(f, "\b}\n");
-			else
-			{
-				fprintf(f, "\b}\t{%d ", PPSpace[i][j]->G->deletion_length);
-				mit = PPSpace[i][j]->G->MutationList->begin();
-				while (mit != PPSpace[i][j]->G->MutationList->end())
-				{
-					fprintf(f, "%d ", ((*mit)==true?1:0));
-					mit++;
-				}
-				fprintf(f, "\b}\n");
-			}
+			fprintf(f, "\b}\n");
 		}
 	}
 

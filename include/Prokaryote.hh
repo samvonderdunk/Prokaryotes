@@ -17,7 +17,6 @@ class Prokaryote{
 		unsigned long long fossil_id;	//Now it should be 64-bit (32-bit unsigned would already be about 200 times as big as the last id you get out of a 100x100 simulation of 100k AUT).
 		Prokaryote* Ancestor;
 		bool mutant;
-		bool mutant_child;
 		bool alive;
 		bool saved_in_graveyard;	//For those individuals who are kept around a bit to calculate MSD.
 

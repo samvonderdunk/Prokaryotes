@@ -38,7 +38,7 @@ void Prokaryote::Replicate()
 	{
 		if (uniform() <= 1.0)	//later the chance that replication proceeds one step depends on several things.
 		{
-			mutant_child = G->ReplicateGenomeStep();
+			G->ReplicateGenomeStep();
 		}
 	}
 }
@@ -49,16 +49,19 @@ void Prokaryote::Mitosis(Prokaryote* parent, int tot_prok_count)
 	fossil_id = tot_prok_count;
 	time_of_appearance = Time;
 
-	mutant = parent->mutant_child;	//If a mutation happened during the replication of your parent's genome, you become a mutant.
+	G->SplitGenome(parent->G);
+
+	if (G->mutant_genome)	mutant = true;
+	else	mutant = false;
 
 	if (parent->mutant)	Ancestor = parent;	//If your parent was a mutant (i.e. its genome holds a mutation with respect to its parent), then your immediate ancestor is your parent.
 	else	Ancestor = parent->Ancestor;	//If your parent was not a mutant (its genome is the same as its parent), then point to its MRCA.
 
-	G->SplitGenome(parent->G);
 	parent->Stage = 0;
 	parent->ready_for_division = false;
-	parent->mutant_child = false;	//mutant_child is set during replication, and reset upon mitosis. In contrast, mutant is determined upon birth and does not change over the lifetime.
-	parent->fitness_deficit = 0.;	//It can try to replicate better next time.
+	// parent->fitness_deficit = 0.;	//It can try to replicate better next time.
+	parent->nr_offspring++;
+	parent->time_replicated = 0;
 }
 
 void Prokaryote::EmptyProkaryote()
@@ -74,7 +77,6 @@ void Prokaryote::EmptyProkaryote()
 	time_of_appearance = 0;
 	Ancestor = NULL;
 	mutant = false;
-	mutant_child = false;
 	alive = true;
 	fitness_deficit = 0.;
 	saved_in_graveyard = false;
@@ -92,7 +94,6 @@ void Prokaryote::PrintData(bool include_genome_data)
 	printf("It is %s.\n", (alive)? "alive":"dead");
 	printf("It is %sready for division.\n", (ready_for_division)? "":"not ");
 	printf("It is %sa mutant.\n", ((mutant)? "":"not " ));
-	printf("It is %sbearing a mutant child.\n", ((mutant_child)? "":"not " ));
 	printf("It will %sbe saved in the graveyard.\n", ((saved_in_graveyard)? "":"not "));
 	printf("----------------------------------------------\n");
 	if(include_genome_data)
