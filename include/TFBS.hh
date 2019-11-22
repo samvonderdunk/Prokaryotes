@@ -17,6 +17,7 @@ class TFBS : public Bead {
   virtual ~TFBS();//destructor
 
   virtual Bead* Clone() const;
+  void RandomTFBS();
 };
 
 #endif

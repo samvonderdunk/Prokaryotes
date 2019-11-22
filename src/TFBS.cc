@@ -36,3 +36,10 @@ TFBS::~TFBS() {
 Bead* TFBS::Clone() const {
   return new TFBS(*this);
 }
+
+void TFBS::RandomTFBS()
+{
+  type = 1;
+  activity = (uniform()>0.5) ? -1 : 1;
+  for (int k=0; k<binding_length; k++)	binding_site[k] = (uniform()>0.5) ? true : false;
+}
