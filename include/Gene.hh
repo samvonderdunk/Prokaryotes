@@ -16,6 +16,7 @@ class Gene : public Bead {
   ~Gene();//destructor
 
   virtual Bead* Clone() const;
+  void RandomGene();
 };
 
 #endif

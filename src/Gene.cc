@@ -35,3 +35,12 @@ Bead* Gene::Clone() const    //This function returns a pointer to a bead (a gene
 {
   return new Gene(*this);   //Note that you have to return a pointer to a Bead type, because Bead is only an abstract type. With the pointer to Bead type that this function makes/returns, you in this case also get the Gene type members the current object is a Gene and so *this is also a Gene. However doing it in this manner means that the function CopyPartOfGenome in Genome.cc can apply to any bead (any class derived from the Bead type). So you generally use pointers to the base class (which drag along their derived class).
 }
+
+void Gene::RandomGene()
+{
+  type = 0; //This will be assigned in the Genome.
+  threshold = (int)(uniform()*(2*WeightRange+1) - WeightRange);	//Threshold between -3 and 3 (including these borders).
+  activity = (int)(uniform()*(2*WeightRange+1) - WeightRange);
+  for (int k=0; k<binding_length; k++)	binding_domain[k] = (uniform()>0.5) ? true : false;
+  expression = 0;
+}
