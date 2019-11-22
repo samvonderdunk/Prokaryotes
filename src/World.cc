@@ -12,6 +12,7 @@ int initial_seed = time(0);
 string folder = "/linuxhome/tmp/sam/Prokaryotes/";
 bool mutational_neighbourhood = false;
 bool attractor_landscape = false;
+bool follow_single_individual = false;
 int NrMutants = 0;
 int NrInitialStates = 0;
 string genome_init = genome_file;
@@ -25,7 +26,6 @@ void Setup(int argc, char** argv);
 int main(int argc, char** argv) {
 
 	/* ############## Setup ############## */
-
 	printf("\n\033[93m### Setup ###\033[0m\n");
 	Population* P;
 	Setup(argc, argv);
@@ -46,6 +46,13 @@ int main(int argc, char** argv) {
 		printf("\033[93m### Start ###\033[0m\n");
 		P = new Population();
 		P->ExploreAttractorLandscape();
+	}
+
+	else if (follow_single_individual)
+	{
+		printf("\033[93m### Start ###\033[0m\n");
+		P = new Population();
+		P->FollowSingleIndividual();
 	}
 
 	else
@@ -75,7 +82,6 @@ int main(int argc, char** argv) {
 		if(SimTime%TimeSaveBackup!=0)	P->OutputBackup();
 		if(SimTime%TimePruneFossils!=0)	P->PruneFossilRecord();
 		if(SimTime%TimeOutputFossils!=0)	P->Fossils->ExhibitFossils();
-
 		printf("Simulation completed...\n\n");
 	}
 
@@ -138,6 +144,13 @@ void Setup(int argc, char** argv) {
 			printf("Exploring attractor landscape by simulating %d initial states.\n", NrInitialStates);
 			i++;
 			continue;
+		}
+
+		//Follow a single immortal individual for many time steps.
+		if(ReadOut=="-S")
+		{
+			follow_single_individual = true;
+			printf("Following a single, immortal individual through time.\n");
 		}
 
 		//Don't do mutations, i.e. no evolution.

@@ -413,6 +413,56 @@ void Population::ReproduceMasterGenome()
 		delete CP;
 		CP = NULL;
 	}
+	delete PP;
+	PP = NULL;
+}
+
+void Population::FollowSingleIndividual()
+{
+	Prokaryote* PP, *CP;
+
+	PP = new Prokaryote();
+	PP->InitialiseProkaryote();
+
+	for(Time=0; Time<SimTime+1; Time++)
+	{
+		//All we want is to know the expression pattern at each time step.
+		cout << "T " << Time << "\tStage: " << PP->Stage << "\tG_len: " << PP->G->g_length << "\tExpr: " << PP->G->PrintGeneStateContent(true) << endl;
+
+		if (PP->ready_for_division && uniform() < 0.1)
+		{
+			CP = new Prokaryote();
+			p_id_count_++;
+			CP->Mitosis(PP, p_id_count_);
+
+			//The child is immediately removed, because we are following its parent.
+			delete CP;
+			CP = NULL;
+		}
+
+		else
+		{
+			PP->G->UpdateGeneStates();
+			PP->UpdateCellCycle();
+
+			if (PP->Stage == 2)
+			{
+				PP->Replicate();
+				PP->time_replicated++;
+			}
+			else if(PP->Stage == 4)
+			{
+				PP->ready_for_division = true;
+			}
+			else
+			{
+				PP->ready_for_division = false;
+			}
+		}
+
+	}
+	delete PP;
+	PP = NULL;
 }
 
 void Population::ExploreAttractorLandscape()

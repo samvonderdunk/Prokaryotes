@@ -41,6 +41,7 @@ class Population
 		void ReadAncestorFile();
 
 		void ReproduceMasterGenome();
+		void FollowSingleIndividual();
 		void ExploreAttractorLandscape();
 		void UpdatePopulation();
 		void DeathOfProkaryote(int i, int j);
