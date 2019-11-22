@@ -388,7 +388,7 @@ void Genome::PotentialTypeChange(iter ii)
 	if(found_matching_type == false && type_abundance > 1)	//We haven't been able to convert it to an existing type, so let's define it as a new type || Or it remains the same type.
 	{
 		gene_iter git;
-		for(int x=0; x<1000; x++)		//Find a not yet used number to use as the type.
+		for(int x=1; x<1000; x++)		//Find a not yet used number to use as the type.
 		{
 			git = find(GeneTypes->begin(), GeneTypes->end(), x);
 			if(git == GeneTypes->end())	//X is not yet used as a gene type.
@@ -504,7 +504,7 @@ void Genome::ReadBeadsFromString(string genome)
 	else if (genestate_init == "S") for(int g=1; g<6; g++)	StageInit[g] = StageTargets[1][g-1];
 	else if (genestate_init == "G2") for(int g=1; g<6; g++)	StageInit[g] = StageTargets[2][g-1];
 	else if (genestate_init == "M") for(int g=1; g<6; g++)	StageInit[g] = StageTargets[3][g-1];
-	else if (backup_reboot == "")	printf("Expression not set to a cell-cycle stage.\n");
+	else	printf("Expression not set to a cell-cycle stage.\n");
 
 	bead = strtok((char*)genome.c_str(),".");
 	while (bead != NULL)
@@ -613,7 +613,7 @@ void Genome::InitialiseRandomGenome()
 	bool binding_section[binding_length];
 
 	//For now, I don't mind that genomes are ordered by gene type.
-	for (int gene_type=0; gene_type<init_nr_gene_types; gene_type++)
+	for (int gene_type=1; gene_type<=init_nr_gene_types; gene_type++)
 	{
 
 		//Define its tfbs's.
@@ -630,7 +630,7 @@ void Genome::InitialiseRandomGenome()
 		threshold = (int)(uniform()*(2*WeightRange+1) - (int)WeightRange);	//Threshold between -3 and 3 (including these borders).
 		activity = (uniform()>0.5) ? -1 : 1;
 		for (int k=0; k<binding_length; k++)	binding_section[k] = (uniform()>0.5) ? true : false;
-		original_five = (gene_type < 5) ? true: false;	//The first five types become the original_five.
+		original_five = (abs(gene_type) < 6) ? true: false;	//The first five types become the original_five.
 		//Check that we have not initiated a gene of the same type
 		iter jj = BeadList->begin();
 		while(jj != BeadList->end())
@@ -667,7 +667,7 @@ void Genome::InitialiseRandomGenome()
 	//Randomly initialise gene expression [0,g] for each type (where g is the number of gene of that type).
 	GeneStates = new vector<int>();
 	GeneTypes = new vector<int>();
-	for(int g=0; g<init_nr_gene_types; g++)
+	for(int g=1; g<=init_nr_gene_types; g++)
 	{
 		GeneStates->push_back((int)(uniform()*2));
 		GeneTypes->push_back(g);
@@ -917,8 +917,6 @@ bool Genome::IsTFBS(Bead* bead) const {
 	return (bool)(typeid(*bead) == typeid(TFBS));
 }
 
-
-string Genome::PrintContent(list<Bead*> * chromosome, bool terminal)	// Printing function for terminal output.
 int Genome::FindIndexOfType(int type)
 {
 	gene_iter git = find(GeneTypes->begin(), GeneTypes->end(), type);
@@ -926,6 +924,7 @@ int Genome::FindIndexOfType(int type)
 	else	return distance(GeneTypes->begin(), git);
 }
 
+string Genome::PrintContent(list<Bead*> * chromosome, bool terminal)	// Printing function for terminal output.
 {
 	string GenomeContent;
 	if(chromosome == NULL) chromosome = this->BeadList;

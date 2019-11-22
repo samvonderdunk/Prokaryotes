@@ -57,7 +57,7 @@ void Prokaryote::UpdateCellCycle()	//Check whether changes in GeneStates make us
 		if (s==Stage)
 		{
 			int match_next_state = 0;
-			for (int g=0; g<5; g++)	//g is the type of gene that we are looking for, ie G0-G4; but these may be shuffled (or some missing) from the actual GeneStates.
+			for (int g=1; g<=5; g++)	//g is the type of gene that we are looking for, ie G1-G5; but these may be shuffled (or some missing) from the actual GeneStates.
 			{
 				git = find(G->GeneTypes->begin(), G->GeneTypes->end(), g);
 				if (git == G->GeneTypes->end())	expression = 0;
@@ -67,7 +67,7 @@ void Prokaryote::UpdateCellCycle()	//Check whether changes in GeneStates make us
 					expression = G->GeneStates->at(index);
 				}
 
-				if(  (expression==0 && !StageTargets[s][g])  ||  (expression!=0 && StageTargets[s][g])  )
+				if(  (expression==0 && !StageTargets[s][g-1])  ||  (expression!=0 && StageTargets[s][g-1])  )
 				{
 					match_next_state++;
 				}
