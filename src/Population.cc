@@ -481,7 +481,15 @@ void Population::FollowSingleIndividual()
 		//All we want is to know the expression pattern at each time step.
 		cout << "T " << Time << "\tE " << Environment << "\tStage: " << PP->Stage << "\tG_len: " << PP->G->g_length << "\tExpr: " << PP->G->PrintGeneStateContent(true) << endl;
 
-		if (PP->ready_for_division && uniform() < 0.1)
+		PP->G->UpdateGeneStates();
+		PP->UpdateCellCycle();
+
+		if (PP->Stage == 2)
+		{
+			PP->Replicate(Environment, 8);
+			PP->time_replicated++;
+		}
+		else if(PP->Stage == 4)
 		{
 			if (PP->time_replicated < replication_time)
 			{
@@ -501,27 +509,6 @@ void Population::FollowSingleIndividual()
 			delete CP;
 			CP = NULL;
 		}
-
-		else
-		{
-			PP->G->UpdateGeneStates();
-			PP->UpdateCellCycle();
-
-			if (PP->Stage == 2)
-			{
-				PP->Replicate(Environment, 8);
-				PP->time_replicated++;
-			}
-			else if(PP->Stage == 4)
-			{
-				PP->ready_for_division = true;
-			}
-			else
-			{
-				PP->ready_for_division = false;
-			}
-		}
-
 	}
 	delete PP;
 	PP = NULL;
