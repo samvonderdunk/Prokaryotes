@@ -481,47 +481,35 @@ void Population::FollowSingleIndividual()
 		//All we want is to know the expression pattern at each time step.
 		cout << "T " << Time << "\tE " << Environment << "\tStage: " << PP->Stage << "\tG_len: " << PP->G->g_length << "\tExpr: " << PP->G->PrintGeneStateContent(true) << endl;
 
-		if (PP->ready_for_division && uniform() < 0.1)
+		PP->G->UpdateGeneStates();
+		PP->UpdateCellCycle();
+
+		if (PP->Stage == 2)
+		{
+			PP->Replicate(Environment, 8);
+			PP->time_replicated++;
+		}
+		else if(PP->Stage == 4)
 		{
 			if (PP->time_replicated < replication_time)
 			{
 				//If you would normally die because you reach M to fast, you here print that you went to Stage -1 (dead) so that we can plot this.
 				cout << "T " << Time << "\tE " << Environment << "\tStage: -1\tG_len: " << PP->G->g_length << "\tExpr: " << PP->G->PrintGeneStateContent(true) << endl;
+				PP->Abortion();
 			}
 			else
 			{
 				//Else we give a sign that we have actually reached M in a healthy way.
 				cout << "T " << Time << "\tE " << Environment << "\tStage: 4\tG_len: " << PP->G->g_length << "\tExpr: " << PP->G->PrintGeneStateContent(true) << endl;
-			}
-			CP = new Prokaryote();
-			p_id_count_++;
-			CP->Mitosis(PP, p_id_count_);
+				CP = new Prokaryote();	//Probably I could also use Abortion over here, but out of laziness I will leave it like this.
+				p_id_count_++;
+				CP->Mitosis(PP, p_id_count_);
 
-			//The child is immediately removed, because we are following its parent.
-			delete CP;
-			CP = NULL;
-		}
-
-		else
-		{
-			PP->G->UpdateGeneStates();
-			PP->UpdateCellCycle();
-
-			if (PP->Stage == 2)
-			{
-				PP->Replicate(Environment, 8);
-				PP->time_replicated++;
-			}
-			else if(PP->Stage == 4)
-			{
-				PP->ready_for_division = true;
-			}
-			else
-			{
-				PP->ready_for_division = false;
+				//The child is immediately removed, because we are following its parent.
+				delete CP;
+				CP = NULL;
 			}
 		}
-
 	}
 	delete PP;
 	PP = NULL;
