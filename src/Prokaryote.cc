@@ -144,15 +144,15 @@ void Prokaryote::UpdateCellCycle()	//Check whether changes in GeneStates make us
 				Stage++;	//You have reached the next stage.
 			}
 
-			// else	//If you don't reach your normal next-state, we check whether you have reached the M-stage. Then you are updated to M-stage immediately. If you do not go there from Stage 3 (G2, as you should) we put your time_replicated to 0. Thus, reaching M-stage too soon will always kill you. You are not allowed to skip any of G1, S (multiple steps) and G2.
-			// {
-			// 	match_next_state = G->MatchNextState(3);	//Evaluate for M-stage.
-			// 	if (match_next_state==5)
-			// 	{
-			// 		time_replicated = 0;	//The death penalty.
-			// 		Stage = 4;
-			// 	}
-			// }
+			else	//If you don't reach your normal next-state, we check whether you have reached the M-stage. Then you are updated to M-stage immediately. If you do not go there from Stage 3 (G2, as you should) we put your time_replicated to 0. Thus, reaching M-stage too soon will always kill you. You are not allowed to skip any of G1, S (multiple steps) and G2.
+			{
+				match_next_state = G->MatchNextState(3);	//Evaluate for M-stage.
+				if (match_next_state==5)
+				{
+					time_replicated = 0;	//The death penalty.
+					Stage = 4;
+				}
+			}
 
 			/*	//Use this code to penalize not matching your next state and if you want, to set expression to the correct state.
 			else	//Let's try to penalize everything that does not fit into our cell-cycle scheme: G1-S-S-S-S-(etc.)-G2-M-M-M-M-(mitosis)-G1-S-S-S-S...
