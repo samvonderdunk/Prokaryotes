@@ -147,5 +147,7 @@ void Setup(int argc, char** argv) {
 	system(command.c_str());
 	command = "mkdir -p " + folder + "/snapsamples";
 	system(command.c_str());
+	command = "mkdir -p " + folder + "/ancestors";
+	system(command.c_str());
 
 }

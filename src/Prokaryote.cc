@@ -16,6 +16,7 @@ Prokaryote::~Prokaryote() {
 
 void Prokaryote::InitialiseProkaryote(){
 	EmptyProkaryote();
+	mutant = true;	//The first will be deemed a mutant so that the ancestor trace always comes back to at least one individual of the initial batch.
 	if(genome_init != "")	G->ReadInitialGenome();
 	else	G->InitialiseRandomGenome();
 }
@@ -26,6 +27,9 @@ void Prokaryote::ClonePPFromPP(Prokaryote* PP_template, int tot_prok_count)
 	//Copy genome from template. This includes the expression levels of each gene.
 	G->CloneGenome(PP_template->G);
 	Stage = PP_template->Stage;
+	fossil_id = tot_prok_count;
+	time_of_appearance = Time;
+	mutant = PP_template->mutant;	//If you clone a mutant (or the first prokaryote), its clone will also count as a mutant.
 }
 
 void Prokaryote::Replicate()
@@ -65,6 +69,12 @@ void Prokaryote::EmptyProkaryote()
 	//Starts at first stage again
 	Stage = 0;
 	ready_for_division = false;
+	fossil_id = 0;
+	time_of_appearance = 0;
+	Ancestor = NULL;
+	mutant = false;
+	mutant_child = false;
+	alive = true;
 	fitness_deficit = 0.;
 }
 

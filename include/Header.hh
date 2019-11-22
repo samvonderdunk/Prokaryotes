@@ -65,6 +65,8 @@ const int SimTime=1000;
 const int TimeSaveGrid = 100; //How many timesteps to save the whole grid as raw data.
 const int TimeTerminalOutput = 10;  //Note that this is also the check for extinction, so let it check!
 const double death_rate = 0.03;
+const int TimePruneFossils = 100;
+const int TimeOutputFossils = 100;
 const double repl_rate = 1.0;
 const int replication_neighbourhood = 3;  //i.e. a 3x3 grid represents the neighbourhood.
 

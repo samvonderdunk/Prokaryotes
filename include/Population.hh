@@ -6,12 +6,15 @@
 #include "Gene.hh"
 #include "TFBS.hh"
 #include "Header.hh"
+#include "FossilRecord.hh"
 #include <cstdio>
 #include <stdlib.h>
 
-class Population{
+class Population
+{
 	public:
 		Prokaryote* PPSpace[NR][NC];
+		FossilRecord* Fossils;
 
 		int p_nr_proks_;	//Probably need this...
 
@@ -26,6 +29,7 @@ class Population{
 		void InitialisePopulation();
 		void ReproduceMasterGenome();
 		void UpdatePopulation();
+		void PruneFossilRecord();
 		void PrintFieldToFile();
 		void PrintSampleToFile();
 		void ShowGeneralProgress();

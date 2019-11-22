@@ -3,7 +3,9 @@
 Population::Population() {
 	int i,j;
 	p_nr_proks_=0;
+	p_id_count_=0;
 
+	Fossils = new FossilRecord();
 	for(i=0;i<NR;i++) for(j=0;j<NC;j++){
 			PPSpace[i][j]=NULL;
 	}
@@ -14,8 +16,11 @@ Population::~Population() {
 	for(i=0;i<NR;i++) for(j=0;j<NC;j++){
 			if((PPSpace[i][j])!=NULL){
 				delete (PPSpace[i][j]);
+				PPSpace[i][j]=NULL;
 			}
 	}
+	delete Fossils;
+	Fossils=NULL;
 }
 
 void Population::InitialisePopulation()
@@ -32,10 +37,15 @@ void Population::InitialisePopulation()
 	cout << "Initial genome = " << PP->G->PrintContent(NULL, true) << endl;	//Pass true as argument to print the nicely colored format for the terminal output.
 	//Now fill the field with this prokaryote (I guess this is less intensive then creating new randomized prokaryotes for the whole grid).
 	for(int row=0; row<NR; row++) for(int col=0; col<NC; col++){
+		p_id_count_++;	//Make sure the first individual gets p_id_count_ of 1.
 		PP_Copy=new Prokaryote();
-		PP_Copy->ClonePPFromPP(PP);
+		PP_Copy->ClonePPFromPP(PP, p_id_count_);
+		PP_Copy->Ancestor = NULL;	//Null-pointer tells me the cell was initialised.
 		PPSpace[row][col] = PP_Copy;
+		Fossils->BuryFossil(PPSpace[row][col]);
+		if(p_id_count_<=generation_sample)	OldGeneration[p_id_count_-1] = PPSpace[row][col];	//Put a subset of prokaryote pointers in the OldGeneration array.
 	}
+
 	delete PP;	//I cannot delete PP_Copy, because each is actually turned into one of grid spaces. I can however delete this single bit of memory.
 	PP = NULL;
 }
@@ -68,7 +78,17 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 
 	if(Time%TimeSaveGrid==0)	PrintSampleToFile();
 	//if(Time%TimeSaveGrid==0)	PrintFieldToFile();
+void Population::UpdatePopulation()	//This is the main next-state function.
+{
+	int reps = 0;
+	if(Time%TimeSaveGrid==0)
+	{
+		if(NR*NC > 3000)	PrintSampleToFile();
+		else	PrintFieldToFile();
+	}
 	if(Time%TimeTerminalOutput==0)	ShowGeneralProgress();
+	if(Time%TimePruneFossils==0 && Time!=0)	PruneFossilRecord();
+	if(Time%TimeOutputFossils==0 && Time!=0)	Fossils->ExhibitFossils();
 
 	for(int i=0; i<NR; i++) for(int j=0; j<NC; j++)		//Here we flag all individuals that are eligible for replication. Getting to the M-stage in this timestep only makes you eligible for replication in the next timestep.
 	{
@@ -115,6 +135,8 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 					PPSpace[i][j]->Mitosis(PPSpace[nrow][ncol], p_id_count_);
 					// cout << "Parent (n): " << PPSpace[nrow][ncol]->G->PrintGeneStateContent() << "\t" << PPSpace[nrow][ncol]->G->PrintContent(NULL, false, false) << endl;
 					// cout << "Child (n): " << PPSpace[i][j]->G->PrintGeneStateContent() << "\t" << PPSpace[i][j]->G->PrintContent(NULL, false, false) << endl;
+					if(PPSpace[i][j]->mutant)	Fossils->BuryFossil(PPSpace[i][j]);
+					reps++;
 				}
 			}
 
@@ -123,8 +145,12 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 		{
 			if(chance < death_rate)	//Death events
 			{
-				delete PPSpace[i][j];
-				PPSpace[i][j]=NULL;
+				if(!PPSpace[i][j]->mutant && !PPSpace[i][j]->saved_in_graveyard)
+				{
+					delete PPSpace[i][j];
+				}
+				else	PPSpace[i][j]->alive = false;
+				PPSpace[i][j] = NULL;
 			}
 
 			else	//Update internal state of prokaryote
@@ -138,9 +164,104 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 				}
 			}
 		}
-	}
 
+	}
 	//Do some diffusion here?
+}
+
+void Population::PruneFossilRecord()
+{
+	std::list<int> AllFossilIDs;
+	/* How the record is pruned:
+	*
+	* MRCA is a pointer to an agent in the 'fossil record'. It points to the specific agent that started a new genotype (so only
+	* mutants are stored in this ancestortrace.
+	*
+	* As long as the MRCA is not one of the first 50 generated (which have NULL as a common ancestor), keep on looking for
+	* ancestors recursively. Add all IDs found like this to a big list (AllFossilIDs). Later, all individuals that are
+	* not in the list, but are part of the fossil record, are deleted from the fossil record. Individuals that
+	* are still alive are never deleted, since it is still unknown if they will be succesfull. (also see example asci)
+	*
+
+	BEFORE PRUNING:
+	Ancestor list contains
+	1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21
+
+
+	PRUNING METHOD:
+	Tracing back [living individuals] from t=x to t=0
+
+
+	[ t=0 ]-->-->-->-->-->-->-->-->--[ t=x ]
+
+	  2
+	 /
+	1		            14<<<<[ 15 ]
+	 <<		          <<
+	   3--4--5        10<<<<12<<<<<<<<[ 13 ]
+	    <<	        <<
+	       6<<<7<<<9
+		\	<<
+	        8         11<<<<16<<<<<<<<[ 17 ]
+			   <<
+			     18--19
+			       <<
+				 20<<<<<<<[ 21 ]
+
+				 _________________
+				|-- extinct branch|
+				|<< traced branch |
+				 -----------------
+
+	AFTER PRUNING:
+	Trace did not include:
+	19,8,4,5,2
+	Pruned ancestor list contains
+	1,3,6,7,9,10,11,12,13,14,15,16,17,18,20,21
+
+	 */
+	for(int i=0; i<NR; i++)	for(int j=0; j<NC; j++)
+	{
+		if(PPSpace[i][j]!=NULL)
+		{
+			// Last common ancestor of living individual located
+			Prokaryote* lastCA = PPSpace[i][j]->Ancestor;
+			// Value 1 is always the root, which has a Null-parent.
+			while(lastCA != NULL)
+			{
+				AllFossilIDs.push_back(lastCA->fossil_id);	// Added to list of agents we must keep
+				lastCA = lastCA->Ancestor;	// 'Next level of taxonomy' (e.g. from 14 to 12 in example asci)
+			}
+		}
+	}
+	// Delete duplicates (e.g. Agent 9 in example asci will be located 4 times. Agent 11 two times, etc.)
+	AllFossilIDs.sort();
+	AllFossilIDs.unique();
+
+
+	// Delete all in FossilList that are not in AllFossilIDs (unless they are still living):
+	cout << "ID count: " << p_id_count_ << endl;
+	cout << "Before pruning: " << (*Fossils).FossilList.size() << endl;
+	iterpps ip = (*Fossils).FossilList.begin();
+	while(ip != (*Fossils).FossilList.end())
+	{
+		// Search if stored agent was also found by tracing back:
+		int fossilID = (*ip)->fossil_id;
+		iter findit = std::find(AllFossilIDs.begin(),AllFossilIDs.end(),fossilID);
+		// If not, delete the fossil unless it is still alive or is still saved in the graveyard. If a prokaryote dies, the graveyard-flag remains for one ShowGeneralProgress() cycle at most, so that the fossil can be deleted at the next pruning step. If ShowGeneralProgress() precedes PruneFossilRecord(), this is issue is even avoided, because flags are already removed off dead prokaryotes.
+		if(findit==AllFossilIDs.end() && !(*ip)->alive && !(*ip)->saved_in_graveyard)
+		{
+			delete *ip;
+			ip = Fossils->FossilList.erase(ip);
+		}
+		else
+		{
+			++ip;
+		}
+	}
+	AllFossilIDs.clear();
+	cout << "After pruning: " << (*Fossils).FossilList.size() << endl;
+}
 
 }
 
