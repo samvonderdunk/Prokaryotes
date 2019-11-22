@@ -76,6 +76,7 @@ void Prokaryote::EmptyProkaryote()
 	mutant_child = false;
 	alive = true;
 	fitness_deficit = 0.;
+	saved_in_graveyard = false;
 }
 
 void Prokaryote::PrintData(bool include_genome_data)

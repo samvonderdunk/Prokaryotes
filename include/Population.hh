@@ -23,6 +23,9 @@ class Population
 
 		int p_id_count_;	// Counter for all agents
 
+		//These are for looking at the occurrence of evolution.
+		Prokaryote* OldGeneration[generation_sample];
+
 		Population();
 		~Population();
 
@@ -34,6 +37,7 @@ class Population
 		void ReproduceMasterGenome();
 		void UpdatePopulation();
 		void PruneFossilRecord();
+		double MatrixDistance(Prokaryote* PP1, Prokaryote* PP2);
 		void PrintFieldToFile();
 		void PrintSampleToFile();
 		void OutputBackup();

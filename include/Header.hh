@@ -70,6 +70,7 @@ const int TimeOutputFossils = 100;
 const double death_rate = 0.05;
 const double repl_rate = 1.0;
 const int replication_neighbourhood = 3;  //i.e. a 3x3 grid represents the neighbourhood.
+const int generation_sample = 10000;
 
 //constants for Prokaryote.cc
 

@@ -19,6 +19,7 @@ class Prokaryote{
 		bool mutant;
 		bool mutant_child;
 		bool alive;
+		bool saved_in_graveyard;	//For those individuals who are kept around a bit to calculate MSD.
 
 		typedef std::list<Prokaryote*>::iterator iterpps;
 

@@ -568,6 +568,45 @@ void Population::PruneFossilRecord()
 	cout << "After pruning: " << (*Fossils).FossilList.size() << endl;
 }
 
+double Population::MatrixDistance(Prokaryote* PP1, Prokaryote* PP2)
+{
+	double** N1;
+	double** N2;
+	N1 = new double* [5];
+	N2 = new double* [5];
+	for (int row=0; row<5; row++)
+	{
+		N1[row] = new double[8];
+		N2[row] = new double[8];
+	}
+
+	for(int row=0; row<5; row++)	for(int col=0; col<8; col++)
+	{
+		N1[row][col] = .0;
+		N2[row][col] = .0;
+	}
+	PP1->G->GenomeToNetwork(N1);
+	PP2->G->GenomeToNetwork(N2);
+
+	double Distance = .0;
+	for(int row=0; row<5; row++)	for(int col=0; col<8; col++)
+	{
+		Distance += abs(N1[row][col] - N2[row][col]);
+	}
+
+	for (int row=0; row<5; row++)
+	{
+		delete [] N1[row];
+		N1[row] = NULL;
+		delete [] N2[row];
+		N2[row] = NULL;
+	}
+	delete [] N1;
+	N1 = NULL;
+	delete [] N2;
+	N2 = NULL;
+
+	return Distance;
 }
 
 void Population::PrintFieldToFile()
@@ -678,14 +717,60 @@ void Population::ShowGeneralProgress()
 {
 	int alive=0, live_comparisons=0, present_alives=0;//, g1=0, s=0, g2=0, m=0, d=0;
 	int stages[5] = {0, 0, 0, 0, 0};
+	double pop_distance = .0, pop_msd = .0;
+
+	for (int i=0; i<NR; i++) for(int j=0; j<NC; j++)
+	{
+		if (Time != 0 && (i*NR + j) < generation_sample)
+		{
+			if(OldGeneration[i*NR+j] != NULL)
+			{
+				if  (PPSpace[i][j] != NULL)
+				{
+
+					pop_distance += MatrixDistance(OldGeneration[i*NR+j], PPSpace[i][j]);	//If the square was or is empty, it is not included in the calculation of pop_distance. GenomeToNetwork() should return pointers to 2D arrays.
+					live_comparisons++;
+				}
+				//OldGeneration[i*NR+j] is an actual prokaryote; before we overwrite we have to see whether it is time to completely delete this guy from all records (when it is not a mutant and not alive, thus not in the fossilrecord) or whether we just stop saving it in the graveyard (allowing the fossilrecord to decide whether it is still interesting for the geneology).
+				if(!OldGeneration[i*NR+j]->mutant && !OldGeneration[i*NR+j]->alive)
+				{
+					delete OldGeneration[i*NR+j];	//If this fellow was dead, remove the grave if it is not interesting for the fossil record.
+					OldGeneration[i*NR+j]=NULL;
+				}
+				else	OldGeneration[i*NR+j]->saved_in_graveyard = false;	//We have to free them from this constrain; otherwise they can never be thrown out of the fossil record.
+			}
+			OldGeneration[i*NR+j] = PPSpace[i][j];	//Update OldGeneration for the next ShowGeneralProgress. We also do this if one of these pointers was NULL.
+			if(PPSpace[i][j] != NULL)	PPSpace[i][j]->saved_in_graveyard = true;	//Even if it dies, it will be kept around at least until the next generation has been compared to it (or longer if it is interesting for the fossil record).
+
+			if ((i*NR + j) < pow(generation_sample, 0.5))
+			{
+				for (int ii=0; ii<NR; ii++)	for(int jj=0; jj<NC; jj++)
+				{
+					if ((ii*NR + jj) < pow(generation_sample, 0.5))
+					{
+						if(PPSpace[i][j] != NULL && PPSpace[ii][jj] != NULL)
+						{
+							pop_msd += MatrixDistance(PPSpace[i][j], PPSpace[ii][jj]);
+							present_alives++;
+						}
+					}
+				}
+			}
+
+		}
+
+		if (PPSpace[i][j]!=NULL)
+		{
 			alive++;
 			stages[PPSpace[i][j]->Stage]++;
 		}
 	}
-	printf("T %d\t() %d\t\tD %d\tG1 %d\tS %d\tG2 %d\tM %d\n", Time, alive, stages[0], stages[1], stages[2], stages[3], stages[4]);
+
+	cout << "T " << Time << "\t() " << alive << "\t\tD " << stages[0] << "\tG1 " << stages[1] << "\tS " << stages[2] << "\tG2 " << stages[3] << "\tM " << stages[4] << "\tD(n) " << pop_distance/live_comparisons << "\tMSD(n) " << pop_msd/present_alives << endl;	//This will actually print during the programme, in contrast to printf().
+
 	if (alive==0)
 	{
-		printf("And since there is no more life, we will stop the experiment here.\n\n");
+		cout << "And since there is no more life, we will stop the experiment here.\n" << endl;
 		exit(1);
 	}
 }
