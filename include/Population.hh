@@ -27,11 +27,16 @@ class Population
 		~Population();
 
 		void InitialisePopulation();
+		void ContinuePopulationFromBackup();
+		void ReadBackupFile();
+		void ReadAncestorFile();
+
 		void ReproduceMasterGenome();
 		void UpdatePopulation();
 		void PruneFossilRecord();
 		void PrintFieldToFile();
 		void PrintSampleToFile();
+		void OutputBackup();
 		void ShowGeneralProgress();
 };
 

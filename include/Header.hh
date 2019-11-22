@@ -62,11 +62,12 @@ const double empty_tf_claim_zero = 1.0;
 
 //constants for Population.cc
 const int SimTime=1000;
+const int TimeTerminalOutput = 1;  //Note that this is also the check for extinction, so let it check!
 const int TimeSaveGrid = 100; //How many timesteps to save the whole grid as raw data.
-const int TimeTerminalOutput = 10;  //Note that this is also the check for extinction, so let it check!
-const double death_rate = 0.03;
+const int TimeSaveBackup = 100;
 const int TimePruneFossils = 100;
 const int TimeOutputFossils = 100;
+const double death_rate = 0.05;
 const double repl_rate = 1.0;
 const int replication_neighbourhood = 3;  //i.e. a 3x3 grid represents the neighbourhood.
 
@@ -84,14 +85,20 @@ extern bool mutational_neighbourhood;
 extern int NrMutants;
 extern string genome_init;
 extern string genestate_init;
+extern string backup_reboot;
+extern string anctrace_reboot;
 extern bool mutations_on;
 
 const string genome_file="/home/sam/Documents/Endosymbiosis/Model/Prokaryotes1.0/input/Caulobacter_SO_genome.g";
 //const string genome_file="/home/sam/Documents/Endosymbiosis/Model/Projects/Caulobacter_Alpha/S107/MA_100k.g";
 const string genestate_file="/home/sam/Documents/Endosymbiosis/Model/Prokaryotes1.0/input/M_stage_genestates.g";
 //const string genestate_file="/home/sam/Documents/Endosymbiosis/Model/Projects/Caulobacter_Alpha/S107/MA_100k_MA_expr.g";
+// const string backup_file="/hosts/linuxhome/mutant9/tmp/sam/Prokaryotes/Caulobacter_crescentusR1/backups/backup01000000.txt";
+// const string anctrace_file="/hosts/linuxhome/mutant9/tmp/sam/Prokaryotes/Caulobacter_crescentusR1/ancestors/anctrace01000000.txt";
 //const string genome_file="";
 //const string genestate_file="";
+const string backup_file="";
+const string anctrace_file="";
 
 
 const bool StageTargets[4][5] = {

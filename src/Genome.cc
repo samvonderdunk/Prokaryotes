@@ -652,7 +652,7 @@ void Genome::ReadBeadsFromString(string genome)
 	else if (genestate_init == "S") for(int g=1; g<6; g++)	StageInit[g] = StageTargets[1][g-1];
 	else if (genestate_init == "G2") for(int g=1; g<6; g++)	StageInit[g] = StageTargets[2][g-1];
 	else if (genestate_init == "M") for(int g=1; g<6; g++)	StageInit[g] = StageTargets[3][g-1];
-	else	printf("Expression not set to a cell-cycle stage.\n");
+	else if (backup_reboot == "")	printf("Expression not set to a cell-cycle stage.\n");
 
 	bead = strtok((char*)genome.c_str(),".");
 	while (bead != NULL)

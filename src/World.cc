@@ -15,6 +15,8 @@ bool mutational_neighbourhood = false;
 int NrMutants = 0;
 string genome_init = genome_file;
 string genestate_init = genestate_file;
+string backup_reboot = backup_file;
+string anctrace_reboot = anctrace_file;
 bool mutations_on = true;
 
 void Setup(int argc, char** argv);
@@ -43,7 +45,8 @@ int main(int argc, char** argv) {
 		/* ############## Initialisation ############## */
 		printf("\033[93m### Initialisation ###\033[0m\n");
 		P = new Population();
-		P->InitialisePopulation();
+		if(backup_reboot != "")	P->ContinuePopulationFromBackup();
+		else	P->InitialisePopulation();
 		printf("Initialisation completed...\n\n");
 
 		/* ############## Simulation ############## */
@@ -132,6 +135,24 @@ void Setup(int argc, char** argv) {
 		{
 			genestate_init = argv[i+1];
 			printf("Genestate input: %s\n", genestate_init.c_str());
+			i++;
+			continue;
+		}
+
+		if(ReadOut=="-b" && (i+1)!=argc)
+		{
+			backup_reboot = argv[i+1];
+			printf("Backup-file input: %s\n", backup_reboot.c_str());
+			i++;
+			continue;
+		}
+
+		if(ReadOut=="-a" && (i+1)!=argc)
+		{
+			anctrace_reboot = argv[i+1];
+			printf("Anctrace input: %s\n", anctrace_reboot.c_str());
+			i++;
+			continue;
 		}
 
 	}
@@ -143,9 +164,9 @@ void Setup(int argc, char** argv) {
 	system(command.c_str());
 	printf("Folder = %s\n", folder.c_str());
 	//Automatically set up a subdirectory for snapshots of the grid (not images but raw data).
-	command = "mkdir -p " + folder + "/snapgrids";
-	system(command.c_str());
 	command = "mkdir -p " + folder + "/snapsamples";
+	system(command.c_str());
+	command = "mkdir -p " + folder + "/backups";
 	system(command.c_str());
 	command = "mkdir -p " + folder + "/ancestors";
 	system(command.c_str());

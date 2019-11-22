@@ -50,6 +50,310 @@ void Population::InitialisePopulation()
 	PP = NULL;
 }
 
+void Population::ContinuePopulationFromBackup()
+{
+	ReadBackupFile();
+	ReadAncestorFile();	//Currently, the fossil_ids are missing from the backup-file so it is impossible to link the fossils to live prokaryotes. But in the new version this will be possible.
+	PruneFossilRecord();
+}
+
+void Population::ReadBackupFile()
+{
+	ifstream infile(backup_reboot.c_str());
+	string line, data;
+	char* data_element;
+	string::iterator sit;
+	Genome::iter it;
+	int reading = 1;	//0 - nothing, 1 - GeneStates, 2 - GeneTypes, 3 - Genome, 4 - Prokaryote properties, 5 - Gene expression.
+	int read_integer = 0, index, begin_data, end_data, counter, success, stage, pfork, panti_ori;
+	bool is_mutant, is_mutant_child;
+	unsigned long long prok_id;
+	double deficit;
+	Prokaryote* PP;
+	Gene* gene;
+
+	if (!infile.is_open())
+	{
+		printf("Backup-file could not be opened.\n");
+		exit(1);
+	}
+
+	printf("Reading backup from file: %s\n", backup_reboot.c_str());
+	int count_lines = 0;
+	while(getline(infile,line))
+	{
+		if (count_lines/NC >= NR || count_lines%NR >= NC)
+		{
+			printf("Backup file was larger than the field; aborting just to be safe.\n");
+			exit(1);
+		}
+		if(line == "0")	PPSpace[count_lines/NC][count_lines%NR] = NULL;
+		else
+		{
+			//Start new individual.
+			PP = new Prokaryote();
+			PP->EmptyProkaryote();
+			PP->G->BeadList = new list<Bead*>();
+			PP->G->GeneTypes = new vector<int>();
+			PP->G->GeneStates = new vector<int>();
+
+			//Read BeadList. Do this first, because it first sets GeneStates and GeneTypes (randomised or based on other input files). We can reset these below.
+			begin_data = line.find_first_of("(");
+			end_data = line.find_last_of(")");
+			data = line.substr(begin_data, end_data-begin_data+1);
+			PP->G->ReadBeadsFromString(data);
+
+			//Read GeneStates.
+			index = line.find("]");
+			data = line.substr(1, index-1);
+			counter = 0;
+			sit = data.begin();
+			while(sit != data.end())
+			{
+				if(*sit == ',')
+				{
+					PP->G->GeneStates->push_back(read_integer);	//Save value just read.
+					counter++;
+					read_integer = 0;
+				}
+				else if(*sit != ' ')
+				{
+					read_integer *= 10;
+					read_integer += (int)*sit - 48;
+				}
+				sit++;
+			}
+			PP->G->GeneStates->push_back(read_integer);
+			read_integer = 0;
+
+			//Read GeneTypes.
+			begin_data = line.find("[", index);
+			end_data = line.find("]", index+1);
+			data = line.substr(begin_data+1, end_data-begin_data-1);
+			counter = 0;
+			sit = data.begin();
+			while(sit != data.end())
+			{
+				if(*sit == ',')
+				{
+					PP->G->GeneTypes->at(counter) = read_integer;	//Save value just read.
+					counter++;
+					read_integer = 0;
+				}
+				else if(*sit != ' ')
+				{
+					read_integer *= 10;
+					read_integer += (int)*sit - 48;
+				}
+				sit++;
+			}
+			PP->G->GeneTypes->at(counter) = read_integer;
+			read_integer = 0;
+
+			//Read prokaryote data.
+			begin_data = line.find_last_of("[");
+			end_data = line.find_last_of("]");
+			data = line.substr(begin_data+1, end_data-begin_data-1);
+			data_element = strtok((char*)data.c_str(),"\t");
+			while(data_element != NULL)
+			{
+				success = sscanf(data_element, "%d %lf %d %d %llu %d %d", &stage, &deficit, &pfork, &panti_ori, &prok_id, &is_mutant, &is_mutant_child);
+				if(success != 7)
+				{
+					cerr << "Could not find sufficient information for this prokaryote. Backup file potentially corrupt.\n" << endl;
+					exit(1);
+				}
+				data_element = strtok(NULL, "\t");
+				PP->Stage = stage;
+				PP->fitness_deficit = deficit;
+				PP->G->pos_fork = pfork;
+				PP->G->pos_anti_ori = panti_ori;
+				PP->fossil_id = prok_id;
+				PP->mutant = is_mutant;
+				PP->mutant_child = is_mutant_child;
+				if (prok_id > p_id_count_) p_id_count_ = prok_id;
+			}
+
+			// Read expression of individual genes. This will work in the new version, where the nr of genes actually corresponds to the length of the gene expression data.
+			begin_data = line.find("{");
+			end_data = line.find("}");
+			data = line.substr(begin_data+1, end_data-begin_data-2);
+			sit = data.begin();
+			it = PP->G->BeadList->begin();
+			while (sit != data.end())
+			{
+				if(*sit != ' ')
+				{
+					while(!PP->G->IsGene(*it))	it++;	//Go through beads until you hit the next gene.
+					gene = dynamic_cast<Gene*>(*it);
+					gene->expression = (int)*sit - 48;
+				}
+				sit++;
+			}
+
+			if(PP->Stage == 2)	//Not sure if this is the right condition.
+			{
+				PP->G->MutationList = new vector<bool>(PP->G->pos_anti_ori);	//If you initiate MutationList during the programme (i.e. first time you get to ReplicateGenomeStep()), you will actually just make the MutationList the same length as g_length. But now we are reading in prokaryotes that have already replicated some beads, so that there g_length is longer and does not match the MutationList data in the backup file.
+
+				begin_data = line.find_last_of("{");
+				end_data = line.find_last_of("}");
+				data = line.substr(begin_data+1, end_data-begin_data-3);	//The -3 is very strange (see how it was -2 above..) but seems to work now.
+				sit = data.begin();
+				counter = 0;
+				read_integer = 0;
+
+				while (sit != data.end())
+				{
+					if (*sit == ' ')
+					{
+						if(counter == 0)	PP->G->deletion_length = read_integer;
+						else	PP->G->MutationList->at(counter-1) = (read_integer==1) ? true:false;
+						read_integer = 0;
+						counter++;
+					}
+					else	//We are looking at a number supposedly.
+					{
+						read_integer *= 10;
+						read_integer += (int)*sit - 48;
+					}
+					sit++;
+				}
+
+				PP->G->MutationList->at(counter-1) = (read_integer==1) ? true:false;
+				read_integer = 0;
+
+			}
+
+			PP->G->SetClaimVectors();
+
+			PPSpace[count_lines/NC][count_lines%NR] = PP;
+			if (PP->mutant)	Fossils->BuryFossil(PP);
+		}
+		if(count_lines<generation_sample)
+		{
+			if(PPSpace[count_lines/NC][count_lines%NR] != NULL)	PPSpace[count_lines/NC][count_lines%NR]->saved_in_graveyard = true;
+			OldGeneration[count_lines] = PPSpace[count_lines/NC][count_lines%NR];	//Put a subset of prokaryote pointers in the OldGeneration array.
+		}
+		count_lines++;
+	}
+	if (count_lines!= NR*NC)
+	{
+		printf("Backup file was too small for the field; aborting just to be safe.\n");
+		exit(1);
+	}
+}
+
+void Population::ReadAncestorFile()
+{
+	ifstream infile(anctrace_reboot.c_str());
+	string line, data;
+	int begin_data, end_data, TimeOA;
+	unsigned long long ID, AncID;
+	iterpps ip, ip2;
+	Prokaryote* PP;
+
+	if (!infile.is_open())
+	{
+		printf("Ancestor-file could not be opened.\n");
+		exit(1);
+	}
+
+	printf("Reading ancestors from file: %s\n", anctrace_reboot.c_str());
+	int count_lines = 0;
+	int count_alive = 0;
+	int count_fossils = 0;
+	while(getline(infile,line))
+	{
+		count_lines++;
+		end_data = line.find("\t");
+		data = line.substr(0,end_data);
+		stringstream(data) >> ID;
+
+		begin_data = end_data;
+		end_data = line.find("\t",end_data+1);
+		data = line.substr(begin_data, end_data-begin_data);
+		stringstream(data) >> AncID;
+
+		begin_data = end_data;
+		end_data = line.find("\t",end_data+1);
+		data = line.substr(begin_data, end_data-begin_data);
+		stringstream(data) >> TimeOA;
+
+		begin_data = end_data;
+		end_data = line.size();
+		data = line.substr(begin_data+1, end_data-begin_data);
+
+		ip = Fossils->FossilList.begin();
+		while (ip != Fossils->FossilList.end())
+		{
+			if ((*ip)->fossil_id == ID)	//Then we have found a live prokaryote in our ancestor file.
+			{
+				count_alive++;
+				(*ip)->time_of_appearance = TimeOA;
+				if (AncID == 0)	(*ip)->Ancestor = NULL;
+				else
+				{
+					ip2 = Fossils->FossilList.begin();
+					while(ip2 != Fossils->FossilList.end())
+					{
+						if ((*ip2)->fossil_id == AncID)
+						{
+							(*ip)->Ancestor = *ip2;
+							break;
+						}
+						ip2++;
+					}
+					if(ip2 == Fossils->FossilList.end())
+					{
+						printf("Error: ancestor not found...exiting.\n");
+						exit(1);
+					}
+				}
+				break;
+			}
+			ip++;
+		}
+
+		if (ip == Fossils->FossilList.end())	//We did not break out of the loop, so we have apparently not encountered this ID among the current list of fossils.
+		{
+			count_fossils++;
+			PP = new Prokaryote();
+			PP->EmptyProkaryote();
+			PP->fossil_id = ID;
+			PP->alive = false;
+			PP->mutant = true;
+			PP->time_of_appearance = TimeOA;
+			if(AncID == 0)	PP->Ancestor = NULL;
+			else	//We have to find the rightful parent of this creature. It should be in the list because we read in the fossil record starting with the oldest fossils; everything afterwards should have a parent present in the record.
+			{
+				ip2 = Fossils->FossilList.begin();
+				while (ip2 != Fossils->FossilList.end())
+				{
+					if ((*ip2)->fossil_id == AncID)
+					{
+						PP->Ancestor = *ip2;
+						break;
+					}
+					ip2++;
+				}
+				if(ip2 == Fossils->FossilList.end())
+				{
+					printf("Error: ancestor not found...exiting.\n");
+					exit(1);
+				}
+			}
+
+			//Set up its ghost genome.	It only has beads.
+			PP->G->BeadList = new list<Bead*>();
+			PP->G->GeneTypes = new vector<int>();
+			PP->G->GeneStates = new vector<int>();
+			PP->G->ReadBeadsFromString(data);
+			Fossils->BuryFossil(PP);
+		}
+
+	}
+}
+
 void Population::ReproduceMasterGenome()
 {
 	Prokaryote* PP;	//the parent
@@ -89,6 +393,7 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 	if(Time%TimeTerminalOutput==0)	ShowGeneralProgress();
 	if(Time%TimePruneFossils==0 && Time!=0)	PruneFossilRecord();
 	if(Time%TimeOutputFossils==0 && Time!=0)	Fossils->ExhibitFossils();
+	if(Time%TimeSaveBackup==0 && Time!=0)	OutputBackup();
 
 	for(int i=0; i<NR; i++) for(int j=0; j<NC; j++)		//Here we flag all individuals that are eligible for replication. Getting to the M-stage in this timestep only makes you eligible for replication in the next timestep.
 	{
@@ -269,7 +574,7 @@ void Population::PrintFieldToFile()
 {
 	FILE* f;
 	char OutputFile[800];
-	sprintf(OutputFile, "%s/snapgrids/field%08d.txt", folder.c_str(), Time);
+	sprintf(OutputFile, "%s/snapsamples/field%08d.txt", folder.c_str(), Time);
 	f=fopen(OutputFile, "w");
 	if (f == NULL){	printf("Failed to open file for writing the field.\n");	}
 
@@ -296,7 +601,7 @@ void Population::PrintSampleToFile()
 
 	int save_number = 3000;
 	int count_saved = 0;
-	for (int i=0; i<NR*2; i++) for(int j=0; j<NC; j++) {	//Don't print row and col numbers to save memory, these can be extracted by secondary scripts.
+	for (int i=0; i<NR*2; i++) for(int j=0; j<NC; j++) {
 		if (uniform() < ((double)save_number/(double)(NR*NC)))
 		{
 			if(PPSpace[i%NR][j]==NULL){
@@ -318,11 +623,61 @@ void Population::PrintSampleToFile()
 
 }
 
-void Population::ShowGeneralProgress() {
-	int alive=0;//, g1=0, s=0, g2=0, m=0, d=0;
-	int stages[5] = {0, 0, 0, 0, 0};
+void Population::OutputBackup()
+{
+	Genome::iter it;
+	Genome::mut_iter mit;
+	Gene* gene;
+	FILE* f;
+	char OutputFile[800];
+	sprintf(OutputFile, "%s/backups/backup%08d.txt", folder.c_str(), Time);
+	f=fopen(OutputFile, "w");
+	if (f == NULL)	printf("Failed to open file for writing the backup.\n");
+
 	for (int i=0; i<NR; i++) for(int j=0; j<NC; j++) {
-		if (PPSpace[i][j]!=NULL){
+		if(PPSpace[i][j]==NULL){
+		 	fprintf(f, "0\n");
+		}
+		else	//Print internal state and genome of prokaryote to file.
+		{
+			fprintf(f, "%s\t", PPSpace[i][j]->G->PrintGeneStateContent().c_str());
+			fprintf(f, "%s\t", PPSpace[i][j]->G->PrintGeneTypeContent().c_str());
+			fprintf(f, "%s\t", PPSpace[i][j]->G->PrintContent(NULL, false, false).c_str());
+			fprintf(f, "[%d %f %d %d %llu %d %d]\t", PPSpace[i][j]->Stage, PPSpace[i][j]->fitness_deficit, PPSpace[i][j]->G->pos_fork, PPSpace[i][j]->G->pos_anti_ori, PPSpace[i][j]->fossil_id, PPSpace[i][j]->mutant, PPSpace[i][j]->mutant_child);
+			fprintf(f, "{");
+			it = PPSpace[i][j]->G->BeadList->begin();
+			while (it != PPSpace[i][j]->G->BeadList->end())
+			{
+				if(PPSpace[i][j]->G->IsGene(*it))
+				{
+					gene = dynamic_cast<Gene*>(*it);
+					fprintf(f, "%d ", gene->expression);
+				}
+				it++;
+			}
+			if(PPSpace[i][j]->G->MutationList == NULL)	fprintf(f, "\b}\n");
+			else
+			{
+				fprintf(f, "\b}\t{%d ", PPSpace[i][j]->G->deletion_length);
+				mit = PPSpace[i][j]->G->MutationList->begin();
+				while (mit != PPSpace[i][j]->G->MutationList->end())
+				{
+					fprintf(f, "%d ", ((*mit)==true?1:0));
+					mit++;
+				}
+				fprintf(f, "\b}\n");
+			}
+		}
+	}
+
+	fclose(f);
+	return;
+}
+
+void Population::ShowGeneralProgress()
+{
+	int alive=0, live_comparisons=0, present_alives=0;//, g1=0, s=0, g2=0, m=0, d=0;
+	int stages[5] = {0, 0, 0, 0, 0};
 			alive++;
 			stages[PPSpace[i][j]->Stage]++;
 		}
