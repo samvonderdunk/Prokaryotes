@@ -49,6 +49,7 @@ class Genome {
 
   void PotentialTypeChange(iter ii);
   bool CheckSameGeneTypes(iter ii, iter jj);
+  bool CheckSameGeneTypes(Gene* gene_ii, Gene* gene_jj);  //Some redundancy (forgot the coding jargon), allowing me to also check the types of two gene pointers.
   void LoseGeneType(int type);
   int CountTypeAbundance(int type);
 
