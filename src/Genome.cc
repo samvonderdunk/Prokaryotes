@@ -949,7 +949,7 @@ void Genome::ReadBeadsFromString(string genome)
 				bitstring[q] = (buffer[q]=='1');	//Easiest way I could think of to convert a character to a boolean; (bool)buffer[q] always returns 1 (whether '1' or '0')!
 				q++;
 			}
-			gene = new Gene(type, threshold, activity, bitstring, (abs(type)<6));	//We initialise with zero expression, but these should be updated with the first round of UpdateGeneStates().
+			gene = new Gene(type, threshold, activity, bitstring, 0);	//We initialise with zero expression, but these should be updated with the first round of UpdateGeneStates().
 			index = FindIndexOfType(abs(type));
 			if(index == -1)	//Type not found in GeneTypes, so add an element.
 			{
