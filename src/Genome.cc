@@ -263,7 +263,7 @@ void Genome::SplitGenome(Genome* G_replicated)	//Used to split a genome upon div
 }
 
 
-void Genome::ReplicateGenomeStep()
+void Genome::ReplicateGenomeStep(int env)
 {
 	iter it, start, end, it_new;
 	Bead* bead;
@@ -275,6 +275,8 @@ void Genome::ReplicateGenomeStep()
 		int repl_noise = ( (int)(uniform()*2) == 1 ) ? repl_step_size:-repl_step_size;
 		repl_remaining_steps = ( (int)(uniform()*2) == 1 ) ? repl_step_size:repl_step_size+repl_noise;
 	}
+
+	repl_remaining_steps -= env;	//Subtract a number of steps defined by the current environment.
 
 	if (repl_remaining_steps == 0)	return;
 

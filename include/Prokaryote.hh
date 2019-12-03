@@ -27,7 +27,7 @@ class Prokaryote{
 
 		void InitialiseProkaryote();
 		void ClonePPFromPP(Prokaryote* PP_template, int tot_prok_count);
-		void Replicate();
+		void Replicate(int env);
 		void Mitosis(Prokaryote* parent, int tot_prok_count);
 		void EmptyProkaryote();
 		void PrintData(bool include_genome_data);

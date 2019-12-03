@@ -32,6 +32,8 @@ class Population
 		//These are for looking at the occurrence of evolution.
 		Prokaryote* OldGeneration[generation_sample];
 
+		int Environment;	//Add noise for a given period of time.
+
 		Population();
 		~Population();
 
@@ -45,6 +47,8 @@ class Population
 		void ExploreAttractorLandscape();
 		void UpdatePopulation();
 		void DeathOfProkaryote(int i, int j);
+		void SetEnvironment();
+
 		void PruneFossilRecord();
 		double MatrixDistance(Prokaryote* PP1, Prokaryote* PP2);
 		void PrintFieldToFile();

@@ -44,6 +44,9 @@ const int init_nr_gene_types = 10;
 const int init_nr_tfbs_per_gene = 3;
 const int WeightRange = 3;  //TFBS weights can range from -WeightRange to +WeightRange.
 const int repl_step_size = 20;
+const bool replicate_entire_genes = false;
+const bool repl_step_noise = false;
+const int replication_time = 0;
 
 // Mutations
 const double gene_threshold_mu = 0.001;
@@ -65,17 +68,21 @@ const int tfbs_selection_exponent = 10;
 const double empty_tf_claim_zero = 1.0;
 
 //constants for Population.cc
-const int SimTime=1000;
-const int TimeTerminalOutput = 1;  //Note that this is also the check for extinction, so let it check!
-const int TimeSaveGrid = 100; //How many timesteps to save the whole grid as raw data.
-const int TimeSaveBackup = 100;
-const int TimePruneFossils = 100;
-const int TimeOutputFossils = 100;
+const int SimTime=100000;
+const int TimeTerminalOutput = 1000;  //Note that this is also the check for extinction, so let it check!
+const int TimeSaveGrid = 10000; //How many timesteps to save the whole grid as raw data.
+const int TimeSaveBackup = 10000;
+const int TimePruneFossils = 10000;
+const int TimeOutputFossils = 10000;
 const double death_rate = 0.02;
 const int TimeZero=0;
 const double repl_rate = 1.0;
 const int replication_neighbourhood = 3;  //i.e. a 3x3 grid represents the neighbourhood.
 const int generation_sample = 10000;
+
+const bool environmental_noise = true;  //Actually used in Genome.cc and Population.cc (for initialisation).
+const double environmental_change_rate = 0.01;
+const int environmental_variation = 10;
 
 //constants for Prokaryote.cc
 

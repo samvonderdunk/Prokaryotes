@@ -81,6 +81,9 @@ void Population::InitialisePopulation()
 
 	delete PP;	//I cannot delete PP_Copy, because each is actually turned into one of grid spaces. I can however delete this single bit of memory.
 	PP = NULL;
+
+	if (environmental_noise)	SetEnvironment();
+	cout << "Initial environment = " << Environment << endl;
 }
 
 void Population::ContinuePopulationFromBackup()
@@ -88,6 +91,8 @@ void Population::ContinuePopulationFromBackup()
 	ReadBackupFile();
 	ReadAncestorFile();	//Currently, the fossil_ids are missing from the backup-file so it is impossible to link the fossils to live prokaryotes. But in the new version this will be possible.
 	// PruneFossilRecord();
+
+	if (environmental_noise)	SetEnvironment();
 }
 
 void Population::ReadBackupFile()
@@ -406,7 +411,7 @@ void Population::ReproduceMasterGenome()
 	//Maybe this is not very efficient, since the programme will be writing between each reproduction event; but it is definitely simple.
 	for(int n=0; n<NrMutants; n++)
 	{
-		PP->Replicate();
+		while(PP->G->pos_fork < PP->G->pos_anti_ori)	PP->Replicate(0);	//Set environment to zero, but keep replicating until you're finished.
 		CP = new Prokaryote();
 		CP->Mitosis(PP, 1);	//It does not matter which fossil_id each child gets, so I say 1.
 		if(Parent_Genome != CP->G->PrintContent(NULL, false, false)) cout << "Child #" << n << ":\t" << CP->G->PrintContent(NULL, false, false) << endl;
@@ -426,8 +431,9 @@ void Population::FollowSingleIndividual()
 
 	for(Time=0; Time<SimTime+1; Time++)
 	{
+		if(environmental_noise)	SetEnvironment();
 		//All we want is to know the expression pattern at each time step.
-		cout << "T " << Time << "\tStage: " << PP->Stage << "\tG_len: " << PP->G->g_length << "\tExpr: " << PP->G->PrintGeneStateContent(true) << endl;
+		cout << "T " << Time << "\tE " << Environment << "\tStage: " << PP->Stage << "\tG_len: " << PP->G->g_length << "\tExpr: " << PP->G->PrintGeneStateContent(true) << endl;
 
 		if (PP->ready_for_division && uniform() < 0.1)
 		{
@@ -447,7 +453,7 @@ void Population::FollowSingleIndividual()
 
 			if (PP->Stage == 2)
 			{
-				PP->Replicate();
+				PP->Replicate(Environment);
 				PP->time_replicated++;
 			}
 			else if(PP->Stage == 4)
@@ -622,6 +628,8 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 	if(Time%TimeOutputFossils==0 && Time!=0)	Fossils->ExhibitFossils();
 	if(Time%TimeSaveBackup==0 && Time!=0)	OutputBackup();
 
+	if(environmental_noise) SetEnvironment();	//Potential change of environment.
+
 	/*
 	for(int i=0; i<NR; i++) for(int j=0; j<NC; j++)		//Here we flag all individuals that are eligible for replication. Getting to the M-stage in this timestep only makes you eligible for replication in the next timestep.
 	{
@@ -709,7 +717,7 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 
 				if (PPSpace[i][j]->Stage == 2)
 				{
-					PPSpace[i][j]->Replicate();
+					PPSpace[i][j]->Replicate(Environment);
 					PPSpace[i][j]->time_replicated++;
 				}
 				//Prokaryotesv2.3: Stage 4 can be reached at any point in the cell-cycle (e.g. from Stage 1 or Stage 3), which puts you straight at the spot: did you replicate long enough? If not, you die; if yes, you replicate.
@@ -733,6 +741,14 @@ void Population::DeathOfProkaryote(int i, int j)
 	if(!PPSpace[i][j]->mutant && !PPSpace[i][j]->saved_in_graveyard)	delete PPSpace[i][j];
 	else	PPSpace[i][j]->alive = false;
 	PPSpace[i][j] = NULL;
+}
+
+void Population::SetEnvironment()
+{
+	if(uniform() < environmental_change_rate)	//Change environment.
+	{
+		Environment = (int)(uniform()*(2*environmental_variation+1) - environmental_variation);
+	}
 }
 
 void Population::PruneFossilRecord()
@@ -1013,7 +1029,7 @@ void Population::ShowGeneralProgress()
 		}
 	}
 
-	cout << "T " << Time << "\t() " << alive << "\t\tD " << stages[0] << "\tG1 " << stages[1] << "\tS " << stages[2] << "\tG2 " << stages[3] << "\tM " << stages[4] << "\tReps " << nr_birth_events << "\tFitD " << (double)cum_fit_def/nr_birth_events << "\tCycleLen " << (double)cum_time_alive/nr_first_births << "\tDist " << pop_distance/live_comparisons << "\tMSD " << pop_msd/present_alives << endl;	//This will actually print during the programme, in contrast to printf().
+	cout << "T " << Time << "\tE " << Environment << "\t() " << alive << "\t\tD " << stages[0] << "\tG1 " << stages[1] << "\tS " << stages[2] << "\tG2 " << stages[3] << "\tM " << stages[4] << "\tReps " << nr_birth_events << "\tFitD " << (double)cum_fit_def/nr_birth_events << "\tCycleLen " << (double)cum_time_alive/nr_first_births << "\tDist " << pop_distance/live_comparisons << "\tMSD " << pop_msd/present_alives << endl;	//This will actually print during the programme, in contrast to printf().
 
 	if (alive==0)
 	{
