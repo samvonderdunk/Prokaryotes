@@ -686,57 +686,45 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 
 		if (environmental_gradient)	GradientEnvironment(i, j);	//Replication chunk size gradient over the field.
 
-		if (PPSpace[i][j] != NULL)	//Site is empty.
+		if (PPSpace[i][j] == NULL)	//Site is empty.
 		{
-			if(chance < death_rate)	DeathOfProkaryote(i, j);	//Death events.
+			int random_neighbour = (int)(uniform()*9);
+			int ni = random_neighbour/replication_neighbourhood;
+			int nj = random_neighbour%replication_neighbourhood;
 
-			else if (PPSpace[i][j]->Stage == 4)
+			//Wrap grid boundaries
+			int nrow = i+ni-1;
+			if(nrow < 0)	nrow += NR;
+			else if(nrow >= NR)	nrow -= NR;
+
+			int ncol = j+nj-1;
+			if(ncol < 0)	ncol += NC;
+			else if(ncol >= NC)	ncol -= NC;
+
+			if (PPSpace[nrow][ncol]!=NULL)	//Random neighbour is alive.
 			{
-				if (PPSpace[i][j]->maturing_time == 0)	PPSpace[i][j]->maturing_time = Time - PPSpace[i][j]->time_of_appearance;
-				if (PPSpace[i][j]->time_replicated >= replication_time && uniform() < (repl_rate - PPSpace[i][j]->fitness_deficit))
+				//Replication events
+				if (PPSpace[nrow][ncol]->ready_for_division && uniform() < (repl_rate - PPSpace[nrow][ncol]->fitness_deficit))	//Only previously flagged individuals get to replicate (i.e. not the ones that acquired the M-stage only this timestep).
 				{
-					//Pick random neighbour.
-					nrow = i;	ncol = j;
-					while (nrow == i && ncol == j)	//Try again if you pick yourself.
+					if(PPSpace[nrow][ncol]->nr_offspring == 0)
 					{
-						random_neighbour = (int)(uniform()*9);
-						ni = random_neighbour/replication_neighbourhood;
-						nj = random_neighbour%replication_neighbourhood;
-
-						//Wrap grid boundaries
-						nrow = i+ni-1;
-						if(nrow < 0)	nrow += NR;
-						else if(nrow >= NR)	nrow -= NR;
-
-						ncol = j+nj-1;
-						if(ncol < 0)	ncol += NC;
-						else if(ncol >= NC)	ncol -= NC;
-					}
-
-					//See what was in the neighbour square, whether we have to delete a cell or can just add one straight away.
-					if(PPSpace[nrow][ncol]!=NULL)	DeathOfProkaryote(nrow, ncol);	//This cell is overgrown by PPSpace[i][j].
-					PPSpace[nrow][ncol] = new Prokaryote();
-
-					if(PPSpace[i][j]->nr_offspring == 0)
-					{
-						cum_time_alive += Time - PPSpace[i][j]->time_of_appearance;
+						cum_time_alive += Time - PPSpace[nrow][ncol]->time_of_appearance;
 						nr_first_births++;
 					}
-					cum_fit_def += PPSpace[i][j]->fitness_deficit;
+					cum_fit_def += PPSpace[nrow][ncol]->fitness_deficit;
 
+					PPSpace[i][j] = new Prokaryote();
 					p_id_count_++;
-					// PPSpace[nrow][ncol]->ClonePPFromPP(PPSpace[i][j], p_id_count_);
-					// cout << nrow << " " << ncol << endl;
-					PPSpace[nrow][ncol]->Mitosis(PPSpace[i][j], p_id_count_);
-					if(PPSpace[nrow][ncol]->mutant)	Fossils->BuryFossil(PPSpace[nrow][ncol]);
+					PPSpace[i][j]->Mitosis(PPSpace[nrow][ncol], p_id_count_);
+					if(PPSpace[i][j]->mutant)	Fossils->BuryFossil(PPSpace[i][j]);
 					nr_birth_events++;
 				}
-
-				else
-				{
-					DeathOfProkaryote(i, j);	//The cell did not spend enough time replicating in S-stage.
-				}
 			}
+
+		}
+		else if(PPSpace[i][j] != NULL)	//Site is alive.
+		{
+			if(chance < death_rate)	DeathOfProkaryote(i, j);	//Death events.
 
 			else	//Update internal state of prokaryote
 			{
@@ -749,6 +737,16 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 					else	resource = 8;	//8 is the maximal resource level.
 					PPSpace[i][j]->Replicate(Environment,resource);
 					PPSpace[i][j]->time_replicated++;
+				}
+				//Prokaryotesv2.3: Stage 4 can be reached at any point in the cell-cycle (e.g. from Stage 1 or Stage 3), which puts you straight at the spot: did you replicate long enough? If not, you die; if yes, you replicate.
+				else if(PPSpace[i][j]->Stage == 4)
+				{
+					PPSpace[i][j]->ready_for_division = true;
+					if (PPSpace[i][j]->maturing_time == 0)	PPSpace[i][j]->maturing_time = Time - PPSpace[i][j]->time_of_appearance;
+				}
+				else
+				{
+					PPSpace[i][j]->ready_for_division = false;
 				}
 			}
 		}
