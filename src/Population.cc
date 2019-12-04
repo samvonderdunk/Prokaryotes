@@ -693,7 +693,7 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 			else if (PPSpace[i][j]->Stage == 4)
 			{
 				if (PPSpace[i][j]->maturing_time == 0)	PPSpace[i][j]->maturing_time = Time - PPSpace[i][j]->time_of_appearance;
-				if (PPSpace[i][j]->time_replicated >= replication_time && uniform() < (repl_rate - PPSpace[i][j]->fitness_deficit))
+				if (PPSpace[i][j]->time_replicated >= replication_time && PPSpace[i][j]->G->pos_fork == PPSpace[i][j]->G->pos_anti_ori && uniform() < (repl_rate - PPSpace[i][j]->fitness_deficit))
 				{
 					//Pick random neighbour.
 					nrow = i;	ncol = j;
