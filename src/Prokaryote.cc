@@ -130,8 +130,8 @@ void Prokaryote::UpdateCellCycle()	//Check whether changes in GeneStates make us
 		if (s==Stage)
 		{
 			// if (Stage == 4 || (Stage == 2 && G->pos_fork != G->pos_anti_ori))	//If you were in Stage 4, you have to earn it again; you are set back to stage 3 and evaluated for matching stage 4 anew.
-			if (Stage == 4 || (Stage == 2 && (time_replicated < replication_time || G->pos_fork != G->pos_anti_ori)))	//Substitute for the above line to learn prokaryotes the trick of S-stage extension.
-			// if(Stage == 2 && (time_replicated < replication_time || G->pos_fork != G->pos_anti_ori))	//Prokaryotesv2.3: You don't stay in M-stage anymore, so the above lines are deprecated.
+			// if (Stage == 4 || (Stage == 2 && (time_replicated < replication_time || G->pos_fork != G->pos_anti_ori)))	//Substitute for the above line to learn prokaryotes the trick of S-stage extension.
+			if(Stage == 4 || Stage == 2 && (time_replicated < replication_time || G->pos_fork != G->pos_anti_ori))	//Prokaryotesv2.3: You don't stay in M-stage anymore, so the above lines are deprecated.
 			{
 				Stage--;
 				s--;	//This means we will evaluate a Stage-4 cell for Stage 4 again.

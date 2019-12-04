@@ -706,18 +706,22 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 				//Replication events
 				if (PPSpace[nrow][ncol]->ready_for_division && uniform() < (repl_rate - PPSpace[nrow][ncol]->fitness_deficit))	//Only previously flagged individuals get to replicate (i.e. not the ones that acquired the M-stage only this timestep).
 				{
-					if(PPSpace[nrow][ncol]->nr_offspring == 0)
+					if (PPSpace[nrow][ncol]->time_replicated == 0 || PPSpace[nrow][ncol]->G->pos_fork != PPSpace[nrow][ncol]->G->pos_anti_ori)	DeathOfProkaryote(nrow, ncol);	//The prokaryote skipped at least one step in its cycle.
+					else
 					{
-						cum_time_alive += Time - PPSpace[nrow][ncol]->time_of_appearance;
-						nr_first_births++;
-					}
-					cum_fit_def += PPSpace[nrow][ncol]->fitness_deficit;
+						if(PPSpace[nrow][ncol]->nr_offspring == 0)
+						{
+							cum_time_alive += Time - PPSpace[nrow][ncol]->time_of_appearance;
+							nr_first_births++;
+						}
+						cum_fit_def += PPSpace[nrow][ncol]->fitness_deficit;
 
-					PPSpace[i][j] = new Prokaryote();
-					p_id_count_++;
-					PPSpace[i][j]->Mitosis(PPSpace[nrow][ncol], p_id_count_);
-					if(PPSpace[i][j]->mutant)	Fossils->BuryFossil(PPSpace[i][j]);
-					nr_birth_events++;
+						PPSpace[i][j] = new Prokaryote();
+						p_id_count_++;
+						PPSpace[i][j]->Mitosis(PPSpace[nrow][ncol], p_id_count_);
+						if(PPSpace[i][j]->mutant)	Fossils->BuryFossil(PPSpace[i][j]);
+						nr_birth_events++;
+					}
 				}
 			}
 
@@ -738,16 +742,14 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 					PPSpace[i][j]->Replicate(Environment,resource);
 					PPSpace[i][j]->time_replicated++;
 				}
-				//Prokaryotesv2.3: Stage 4 can be reached at any point in the cell-cycle (e.g. from Stage 1 or Stage 3), which puts you straight at the spot: did you replicate long enough? If not, you die; if yes, you replicate.
+
 				else if(PPSpace[i][j]->Stage == 4)
 				{
 					PPSpace[i][j]->ready_for_division = true;
 					if (PPSpace[i][j]->maturing_time == 0)	PPSpace[i][j]->maturing_time = Time - PPSpace[i][j]->time_of_appearance;
 				}
-				else
-				{
-					PPSpace[i][j]->ready_for_division = false;
-				}
+				else	PPSpace[i][j]->ready_for_division = false;
+
 			}
 		}
 
