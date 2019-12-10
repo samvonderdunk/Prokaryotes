@@ -399,6 +399,16 @@ void Population::FollowSingleIndividual()
 
 		if (PP->ready_for_division && uniform() < 0.1)
 		{
+			if (PP->time_replicated < replication_time)
+			{
+				//If you would normally die because you reach M to fast, you here print that you went to Stage -1 (dead) so that we can plot this.
+				cout << "T " << Time << "\tE " << Environment << "\tStage: -1\tG_len: " << PP->G->g_length << "\tExpr: " << PP->G->PrintGeneStateContent(true) << endl;
+			}
+			else
+			{
+				//Else we give a sign that we have actually reached M in a healthy way.
+				cout << "T " << Time << "\tE " << Environment << "\tStage: 4\tG_len: " << PP->G->g_length << "\tExpr: " << PP->G->PrintGeneStateContent(true) << endl;
+			}
 			CP = new Prokaryote();
 			p_id_count_++;
 			CP->Mitosis(PP, p_id_count_);
