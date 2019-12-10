@@ -46,7 +46,7 @@ const int WeightRange = 3;  //TFBS weights can range from -WeightRange to +Weigh
 const int repl_step_size = 20;
 const bool replicate_entire_genes = false;
 const bool repl_step_noise = false;
-const int replication_time = 0;
+const int replication_time = 1;
 
 // Mutations
 const double gene_threshold_mu = 0.001;
