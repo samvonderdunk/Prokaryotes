@@ -20,6 +20,7 @@ string genestate_init = genestate_file;
 string backup_reboot = backup_file;
 string anctrace_reboot = anctrace_file;
 bool mutations_on = true;
+int init_env = 0;
 
 void Setup(int argc, char** argv);
 
@@ -193,12 +194,19 @@ void Setup(int argc, char** argv) {
 			continue;
 		}
 
-		else	//Print usage/help.
+		else if(ReadOut=="-e" && (i+1)!=argc)
 		{
-			printf("\n\033[93m### Prokaryotes --- usage ###\033[0m\nArgument options:\n   -p\t\tProject title [define folder for local storage]\n   -s\t\tSeed [for random number generator]\n   -i\t\tInitial genome [specify file containing single genome]\n   -g\t\tInitial expression [specify file with single gene-state vector]\n   -nomut\tNo mutations\n   -b\t\tStart from backup [specify backup file]\n   -a\t\tContinue ancestor trace from backup\n Programmes:\n   -M [nr_mutants]\tGenerate mutants\n   -A [nr_states]\tSimulate state-space transitions [nr. of initial states = max(nr_states, total nr. unique states)]\n   -S\t\t\tFollow single immortal individual/lineage through time [simulating until Time==SimTime]\n");
-			exit(1);
+			init_env = atoi(argv[i+1]);
+			printf("Environment input: %d\n", init_env);
+			i++;
+			continue;
 		}
 
+		else	//Print usage/help.
+		{
+			printf("\n\033[93m### Prokaryotes --- usage ###\033[0m\nArgument options:\n   -p [project title]\t\tDefines folder for local storage\n   -s [seed]\t\tSet seed for random number generator (e.g. 211)\n   -i [initial genome]\t\te.g. MRCA.g\n   -g [initial expression]\t\te.g. MRCA_GS.g\n   -e [env]\t\tInitial environment (e.g. -3)\n   -b [backup file]\t\tStart from backup (e.g. /path/backup00090000.txt)\n   -a [ancestor file]\t\tContinue ancestor trace (e.g. /path/anctrace00090000.txt)\n   -nomut\tNo mutations\n Programmes:\n   -M [nr_mutants]\tGenerate mutants\n   -A [nr_states]\tSimulate state-space transitions [nr. of initial states = max(nr_states, total nr. unique states)]\n   -S\t\t\tFollow single immortal individual/lineage through time [simulating until Time==SimTime]\n");
+			exit(1);
+		}
 	}
 
 	if (!initial_seed_set)	printf("Seed = %li\n", time(0));

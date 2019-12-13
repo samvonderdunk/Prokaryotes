@@ -15,6 +15,7 @@ Population::Population()
 	{
 		OldGeneration[n]=NULL;
 	}
+	Environment = init_env;
 }
 
 Population::~Population()

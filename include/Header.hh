@@ -105,6 +105,7 @@ extern string genestate_init;
 extern string backup_reboot;
 extern string anctrace_reboot;
 extern bool mutations_on;
+extern int init_env;
 
 // const string genome_file="/home/sam/Documents/Endosymbiosis/Model/Prokaryotes/input/Caulobacter_SO_genome.g";
 //const string genome_file="/home/sam/Documents/Endosymbiosis/Model/Projects/Caulobacter_Alpha/S107/MA_100k.g";
