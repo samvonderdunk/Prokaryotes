@@ -112,6 +112,8 @@ void Genome::DevelopChildrenGenomes(Genome* G_replicated)	//Function gets iterat
 	G_replicated->SetClaimVectors();
 	G_replicated->pos_fork = 0;
 
+	gnr_genes = G_replicated->gnr_genes;	//Copy gnr_genes to child before mutations have happened (and adjust during mutations).
+
 	if (mutations_on)	//START mutations.
 	{
 		MutationList = new vector<bool>(g_length, false);	//Initialise the mutation-list with same length as the genome and with all entries set to 'false'.
@@ -212,7 +214,6 @@ void Genome::DevelopChildrenGenomes(Genome* G_replicated)	//Function gets iterat
 			{
 				IncrementExpressionOfType(it);	//Find the index of this gene type in GeneTypes.
 			}
-			gnr_genes++;
 		}
 		it++;
 	}
@@ -514,6 +515,7 @@ Genome::iter Genome::GeneInnovation()
 	insertsite=BeadList->insert(insertsite, gene);
 
 	g_length++;
+	gnr_genes++;
 	return insertsite;
 }
 
@@ -533,6 +535,7 @@ Genome::iter Genome::GeneDeletion(iter ii, int* pdel_len)
 	//Decrement the number of beads and the number of genes.
 	del_length = distance(first, last);
 	g_length -= del_length;
+	gnr_genes--;
 	(*pdel_len) += del_length;
 	// gnr_genes--;//you know one gene is removed
 	jj=first;
@@ -623,13 +626,7 @@ Genome::iter Genome::FindRandomGenePosition() const
 			i++;
 		}
 		randpos=(int)(uniform()*gnr_genes);	//If you found the first gene, randpos will be 0 (no need to advance to another gene); if you find the last gene, randpos will be gnr_genes-1 which is enough to reach the gnr_genes'th gene.
-		if(randpos > gnr_genes)
-		{
-			printf("Error: Random gene outside genome limits.\n");
-			exit(1);
-		}
 		ii = (*boost::next(pos.begin(),randpos));	//Possibly try advance(ii, randpos) instead.
-
 		return ii;
 	}
 }
