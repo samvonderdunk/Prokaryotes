@@ -195,6 +195,15 @@ void Genome::DevelopChildrenGenomes(Genome* G_replicated)	//Function gets iterat
 			(*pdup_length)++;
 		}
 
+		//Do shuffling mutations.
+		it = BeadList->begin();
+		while(it != BeadList->end())
+		{
+			if(IsGene(*it) && uniform() < gene_shuffle_mu)	it=GeneShuffle(it);
+			else if(IsTFBS(*it) && uniform() < tfbs_shuffle_mu)	it=TFBSShuffle(it);
+			else	it++;
+		}
+
 	}	//END of mutations.
 
 	//Loop through the child genome and build the GeneTypes and GeneStates vectors.
@@ -548,6 +557,35 @@ Genome::iter Genome::GeneDeletion(iter ii, int* pdel_len)
 	return ii;
 }
 
+Genome::iter Genome::GeneShuffle(iter ii)
+{
+	iter insertsite, first, last, jj;
+	list<Bead*> BeadListTemp;	//Create a new temporary genome list.
+
+	//Copy the gene with its upstream tfbs's to a temporary chromosome.
+	last = ii;
+	last++;   //One further than the gene position (the one not to be part of the dupl).
+	first=FindFirstTFBSInFrontOfGene(ii);	//First tfbs in front of gene.
+	CopyPartOfGenomeToTemplate(first, last, &BeadListTemp); //Makes a 'chromosome' with only this gene (and its tfbs) on it.
+	last--;	//This is important, because if we move the virtual copy of the gene directly downstream of its original (i.e. it does not really move), then if last is still pointing to the bead that was originally adjacent to the gene, both the virtual copy and the original will be removed.
+
+	//Splice the temporary chromosome into the full genome.
+	insertsite=FindRandomGenePosition();			//Find position of gene to insert in front of.
+	insertsite=FindFirstTFBSInFrontOfGene(insertsite);	//Find first tfbs in front of this gene.
+	BeadList->splice(insertsite, BeadListTemp);	//Splice temporary list into chromosome.
+
+	last++;	//Now make last point to the next bead after the original gene again (see above), so that we will only remove the original gene with its preceding binding sites.
+	//Remove the bead from its original position, taken from GeneDeletion().
+	jj=first;
+	while( jj != last )
+	{
+		delete *jj;
+		jj++;
+	}
+	ii=(*BeadList).erase(first, last);
+	return ii;
+}
+
 Genome::iter Genome::TFBSDuplication(iter ii)
 {
 	iter tt, upstream;
@@ -593,6 +631,28 @@ Genome::iter Genome::TFBSDeletion(iter ii)
 	ii=(*BeadList).erase(ii);
 
 	g_length--;
+	return ii;
+}
+
+Genome::iter Genome::TFBSShuffle(iter ii)
+{
+	iter tt, upstream;
+	int randpos;
+	TFBS* tfbs;
+	tfbs=dynamic_cast<TFBS *>(*ii);
+
+	//Create copy and insert at random location.
+	TFBS* tfbsnew = new TFBS(*tfbs);
+
+	tt = (*BeadList).begin();
+	randpos = (int)(uniform()*g_length);
+	advance(tt,randpos);			// tt holds random spot in the genome e.g. |---------------x-----------|
+	tt = (*BeadList).insert(tt, tfbsnew);	//Insert tfbs-copy to the left of a random position in the genome (tt).
+
+	//Remove the old bead.
+	delete (tfbs);
+	ii=(*BeadList).erase(ii);
+
 	return ii;
 }
 
