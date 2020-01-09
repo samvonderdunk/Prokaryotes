@@ -102,7 +102,6 @@ void Setup(int argc, char** argv) {
 	bool project_name_found = false;
 	bool initial_seed_set = false;
 
-
 	for(int i=1;i<argc;i++)	//Loop through input arguments.
 	{
 		ReadOut = (char*) argv[i];	//There does not seem to be a quicker way to compare the input arguments with a string.
@@ -118,7 +117,7 @@ void Setup(int argc, char** argv) {
 		}
 
 		//Let user define subdirectory for the project
-		if(ReadOut=="-p" && (i+1)!=argc)
+		else if(ReadOut=="-p" && (i+1)!=argc)
 		{
 			folder += argv[i+1];
 			project_name_found = true;
@@ -127,7 +126,7 @@ void Setup(int argc, char** argv) {
 		}
 
 		//If user wants to look at mutational neighbourhood, no simulation will be started, and a bunch of offspring is generated. Make sure to provide a genome file, otherwise the programme will use a randomly generated genome to seed the offspring.
-		if(ReadOut=="-M" && (i+1)!=argc)
+		else if(ReadOut=="-M" && (i+1)!=argc)
 		{
 			mutational_neighbourhood = true;
 			NrMutants = atoi(argv[i+1]);
@@ -137,7 +136,7 @@ void Setup(int argc, char** argv) {
 		}
 
 		//If user wants to look at attractor landscape, all possible states will be simulated for one timestep (or a sample of all possible states) and their resulting states will be given as output.
-		if(ReadOut=="-A" && (i+1)!=argc)
+		else if(ReadOut=="-A" && (i+1)!=argc)
 		{
 			attractor_landscape = true;
 			NrInitialStates = atoi(argv[i+1]);
@@ -147,21 +146,21 @@ void Setup(int argc, char** argv) {
 		}
 
 		//Follow a single immortal individual for many time steps.
-		if(ReadOut=="-S")
+		else if(ReadOut=="-S")
 		{
 			follow_single_individual = true;
 			printf("Following a single, immortal individual through time.\n");
 		}
 
 		//Don't do mutations, i.e. no evolution.
-		if(ReadOut=="-nomut")
+		else if(ReadOut=="-nomut")
 		{
 			mutations_on = false;
 			printf("Simulating without mutations.\n");
 		}
 
 		//Let user define input genome file on the command line (allows you to work together with snakemake at kindergarten).
-		if(ReadOut=="-i" && (i+1)!=argc)
+		else if(ReadOut=="-i" && (i+1)!=argc)
 		{
 			genome_init = argv[i+1];
 			printf("Genome input: %s\n", genome_init.c_str());
@@ -170,7 +169,7 @@ void Setup(int argc, char** argv) {
 		}
 
 		//Let user define input genestate file on the command line (again handy for snakemake). You can either define the path to a genestate file or input a letter corresponding to one of the four cell-cycle stages (G1, S, G2 or M).
-		if(ReadOut=="-g" && (i+1)!=argc)
+		else if(ReadOut=="-g" && (i+1)!=argc)
 		{
 			genestate_init = argv[i+1];
 			printf("Genestate input: %s\n", genestate_init.c_str());
@@ -178,7 +177,7 @@ void Setup(int argc, char** argv) {
 			continue;
 		}
 
-		if(ReadOut=="-b" && (i+1)!=argc)
+		else if(ReadOut=="-b" && (i+1)!=argc)
 		{
 			backup_reboot = argv[i+1];
 			printf("Backup-file input: %s\n", backup_reboot.c_str());
@@ -186,12 +185,18 @@ void Setup(int argc, char** argv) {
 			continue;
 		}
 
-		if(ReadOut=="-a" && (i+1)!=argc)
+		else if(ReadOut=="-a" && (i+1)!=argc)
 		{
 			anctrace_reboot = argv[i+1];
 			printf("Anctrace input: %s\n", anctrace_reboot.c_str());
 			i++;
 			continue;
+		}
+
+		else	//Print usage/help.
+		{
+			printf("\n\033[93m### Prokaryotes --- usage ###\033[0m\nArgument options:\n   -p\t\tProject title [define folder for local storage]\n   -s\t\tSeed [for random number generator]\n   -i\t\tInitial genome [specify file containing single genome]\n   -g\t\tInitial expression [specify file with single gene-state vector]\n   -nomut\tNo mutations\n   -b\t\tStart from backup [specify backup file]\n   -a\t\tContinue ancestor trace from backup\n Programmes:\n   -M [nr_mutants]\tGenerate mutants\n   -A [nr_states]\tSimulate state-space transitions [nr. of initial states = max(nr_states, total nr. unique states)]\n   -S\t\t\tFollow single immortal individual/lineage through time [simulating until Time==SimTime]\n");
+			exit(1);
 		}
 
 	}
