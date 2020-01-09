@@ -26,11 +26,6 @@ Population::~Population()
 	{
 		if((PPSpace[i][j])!=NULL)
 		{
-			// cout << "\nDeleting prok at " << i << ", " << j << endl;
-			// cout << "PPSpace: " << PPSpace[i][j] << " " << PPSpace[i][j]->fossil_id << endl;
-			// cout << OldGeneration[i*NC+j] << endl;
-			// if (OldGeneration[i*NC+j]!=NULL) cout << "OldGeneration: " << OldGeneration[i*NC+j] << " " << OldGeneration[i*NC+j]->fossil_id << endl;
-			// cout << PPSpace[i][j]->mutant << endl;
 			if(PPSpace[i][j]->saved_in_graveyard)	OldGeneration[i*NC+j]=NULL;
 			if(PPSpace[i][j]->mutant)	Fossils->EraseFossil(PPSpace[i][j]->fossil_id);
 			delete (PPSpace[i][j]);
@@ -232,39 +227,6 @@ void Population::ReadBackupFile()
 				else	it++;
 				sit++;
 			}
-
-			// if(PP->Stage == 2)	//Not sure if this is the right condition.
-			// {
-			// 	PP->G->MutationList = new vector<bool>(PP->G->pos_anti_ori);	//If you initiate MutationList during the programme (i.e. first time you get to ReplicateGenomeStep()), you will actually just make the MutationList the same length as g_length. But now we are reading in prokaryotes that have already replicated some beads, so that there g_length is longer and does not match the MutationList data in the backup file.
-			//
-			// 	begin_data = line.find_last_of("{");
-			// 	end_data = line.find_last_of("}");
-			// 	data = line.substr(begin_data+1, end_data-begin_data-3);	//The -3 is very strange (see how it was -2 above..) but seems to work now.
-			// 	sit = data.begin();
-			// 	counter = 0;
-			// 	read_integer = 0;
-			//
-			// 	while (sit != data.end())
-			// 	{
-			// 		if (*sit == ' ')
-			// 		{
-			// 			if(counter == 0)	PP->G->deletion_length = read_integer;
-			// 			else	PP->G->MutationList->at(counter-1) = (read_integer==1) ? true:false;
-			// 			read_integer = 0;
-			// 			counter++;
-			// 		}
-			// 		else	//We are looking at a number supposedly.
-			// 		{
-			// 			read_integer *= 10;
-			// 			read_integer += (int)*sit - 48;
-			// 		}
-			// 		sit++;
-			// 	}
-			//
-			// 	PP->G->MutationList->at(counter-1) = (read_integer==1) ? true:false;
-			// 	read_integer = 0;
-			//
-			// }
 
 			PP->G->SetClaimVectors();
 
@@ -630,17 +592,6 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 
 	if(environmental_noise) SetEnvironment();	//Potential change of environment.
 
-	/*
-	for(int i=0; i<NR; i++) for(int j=0; j<NC; j++)		//Here we flag all individuals that are eligible for replication. Getting to the M-stage in this timestep only makes you eligible for replication in the next timestep.
-	{
-		if(PPSpace[i][j] != NULL)
-		{
-			if(PPSpace[i][j]->Stage == 4)	PPSpace[i][j]->ready_for_division = true;
-			else	PPSpace[i][j]->ready_for_division = false;
-		}
-	}
-	*/
-
 	nr_birth_events = 0;
 	nr_first_births = 0;
 	cum_time_alive = 0;	//Store the total time that prokaryotes undergoing mitosis are alive (used to extract the average length of their life cycle).
@@ -655,20 +606,6 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 		j = update_order[u]%NC;	//Column index.
 		chance = uniform();
 
-		// if (i == 10 && j == 10)
-		// {
-		// 	if(PPSpace[i][j] == NULL)	cout << "\nEmpty\n" << endl;
-		// 	else	PPSpace[i][j]->PrintData(true);
-		// }
-
-		// if (PPSpace[i][j]!= NULL){
-		// 	if(PPSpace[i][j]->fossil_id == 3)	PPSpace[i][j]->PrintData(true);
-		// }
-
-		// if(PPSpace[i][j]!=NULL)	PPSpace[i][j]->PrintData(true);
-		// else	cout << "Empty" << endl;
-
-		//Prokaryotesv2.3: Nothing can happen on an empty site; mitosis now takes place from the cell that is in M-stage.
 		if (PPSpace[i][j]==NULL)	//Site is empty.
 		{
 			int random_neighbour = (int)(uniform()*9);
@@ -705,10 +642,10 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 			}
 
 		}
+
 		else
 		{
 			if(chance < death_rate)	DeathOfProkaryote(i, j);	//Death events.
-
 
 			else	//Update internal state of prokaryote
 			{
@@ -720,20 +657,12 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 					PPSpace[i][j]->Replicate(Environment);
 					PPSpace[i][j]->time_replicated++;
 				}
-				//Prokaryotesv2.3: Stage 4 can be reached at any point in the cell-cycle (e.g. from Stage 1 or Stage 3), which puts you straight at the spot: did you replicate long enough? If not, you die; if yes, you replicate.
-				else if(PPSpace[i][j]->Stage == 4)
-				{
-					PPSpace[i][j]->ready_for_division = true;
-				}
-				else
-				{
-					PPSpace[i][j]->ready_for_division = false;
-				}
+				else if(PPSpace[i][j]->Stage == 4)	PPSpace[i][j]->ready_for_division = true;
+				else	PPSpace[i][j]->ready_for_division = false;
 			}
 		}
 
 	}
-	//Do some diffusion here?
 }
 
 void Population::DeathOfProkaryote(int i, int j)
@@ -754,54 +683,7 @@ void Population::SetEnvironment()
 void Population::PruneFossilRecord()
 {
 	std::list<int> AllFossilIDs;
-	/* How the record is pruned:
-	*
-	* MRCA is a pointer to an agent in the 'fossil record'. It points to the specific agent that started a new genotype (so only
-	* mutants are stored in this ancestortrace.
-	*
-	* As long as the MRCA is not one of the first 50 generated (which have NULL as a common ancestor), keep on looking for
-	* ancestors recursively. Add all IDs found like this to a big list (AllFossilIDs). Later, all individuals that are
-	* not in the list, but are part of the fossil record, are deleted from the fossil record. Individuals that
-	* are still alive are never deleted, since it is still unknown if they will be succesfull. (also see example asci)
-	*
 
-	BEFORE PRUNING:
-	Ancestor list contains
-	1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21
-
-
-	PRUNING METHOD:
-	Tracing back [living individuals] from t=x to t=0
-
-
-	[ t=0 ]-->-->-->-->-->-->-->-->--[ t=x ]
-
-	  2
-	 /
-	1		            14<<<<[ 15 ]
-	 <<		          <<
-	   3--4--5        10<<<<12<<<<<<<<[ 13 ]
-	    <<	        <<
-	       6<<<7<<<9
-		\	<<
-	        8         11<<<<16<<<<<<<<[ 17 ]
-			   <<
-			     18--19
-			       <<
-				 20<<<<<<<[ 21 ]
-
-				 _________________
-				|-- extinct branch|
-				|<< traced branch |
-				 -----------------
-
-	AFTER PRUNING:
-	Trace did not include:
-	19,8,4,5,2
-	Pruned ancestor list contains
-	1,3,6,7,9,10,11,12,13,14,15,16,17,18,20,21
-
-	 */
 	for(int i=0; i<NR; i++)	for(int j=0; j<NC; j++)
 	{
 		if(PPSpace[i][j]!=NULL)

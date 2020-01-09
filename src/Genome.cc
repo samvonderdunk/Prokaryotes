@@ -9,7 +9,6 @@ Genome::Genome() {
 	pos_fork=0;
 	pos_anti_ori=0;
 	mutant_genome=false;
-	// MutationList=NULL;
 }
 
 Genome::~Genome() {
@@ -29,10 +28,8 @@ Genome::~Genome() {
 
 	delete GeneStates;
 	delete GeneTypes;
-	// delete MutationList;
 	GeneStates=NULL;
 	GeneTypes=NULL;
-	// MutationList=NULL;
 }
 
 void Genome::CopyPartOfGenome(iter begin, iter end)
@@ -183,14 +180,12 @@ void Genome::DevelopChildrenGenomes(Genome* G_replicated)	//Function gets iterat
 		//Innovations of genes and TFBSs. Note that g_length is updated at GeneDuplication() and GeneDeletion() so any position along the genome is allowed for the novel gene/TFBS.
 		if(uniform() < gene_innovation_mu)
 		{
-			// cout << "Gene innov" << endl;
 			it = GeneInnovation();
 			PotentialTypeChange(it);
 			(*pdup_length)++;
 		}
 		if(uniform() < tfbs_innovation_mu)
 		{
-			// cout << "TFBS innov" << endl;
 			TFBSInnovation();
 			(*pdup_length)++;
 		}
@@ -349,26 +344,20 @@ Genome::iter Genome::GeneMutate(iter ii, int* pdel_len) {
 	if(uu < gene_duplication_mu)
 	{
 		(*ii)->type = -(*ii)->type;	//Mark for duplication during divison.
-		// cout << "Gene dupl" << endl;
-		// ii = GeneDuplication(ii, pdup_len, pmut_index);
 		mutant_genome = true;
-		// cout << "done" << endl;
 		ii++;
 	}
 
 	else if(uu < gene_deletion_mu+gene_duplication_mu)
 	{
-		// cout << "Gene del" << endl;
 		ii = GeneDeletion(ii, pdel_len);
 		mutant_genome = true;
-		// cout << "done" << endl;
 	}
 
 	else
 	{
 		if(uniform() < gene_threshold_mu)	//All mutational events are now independent, i.e. a gene can get multiple mutations or none, or one.
 		{
-			// cout << "Gene thr mu" << endl;
 			if (uniform()>0.8)	gene->threshold = (uniform()>0.5) ? gene->threshold+1 : gene->threshold-1;
 			else
 			{
@@ -385,7 +374,6 @@ Genome::iter Genome::GeneMutate(iter ii, int* pdel_len) {
 
 		if (uniform() < gene_activity_mu)
 		{
-			// cout << "Gene act mu" << endl;
 			if (uniform()>0.8)	gene->activity = (uniform()>0.5) ? gene->activity+1 : gene->activity-1;
 			else
 			{
@@ -405,7 +393,6 @@ Genome::iter Genome::GeneMutate(iter ii, int* pdel_len) {
 		{
 			if(uniform() < gene_binding_domain_mu)
 			{
-				// cout << "Gbit mu" << endl;
 				if (gene->binding_domain[k] == false) gene->binding_domain[k] = true;
 				else if (gene->binding_domain[k] == true) gene->binding_domain[k] = false;
 			 	potential_type_change = true;
@@ -414,9 +401,7 @@ Genome::iter Genome::GeneMutate(iter ii, int* pdel_len) {
 		}
 
 		if (potential_type_change){
-			// cout << "Pot type change" << endl;
 			PotentialTypeChange(ii);	//Check that it has not become the same type as one of the other genes. I don't think it matters that it is one of the original five. Every gene can convert into an existing type; for duplicated genes, one can attain a new type.
-			// cout << "Finished" << endl;
 		}
 		ii++;
 	}
@@ -434,21 +419,15 @@ Genome::iter Genome::TFBSMutate(iter ii, int* pdel_len)
 	if(uu < tfbs_duplication_mu)
 	{
 		(*ii)->type = -(*ii)->type;
-		// cout << "TFBS dupl" << endl;
-		// ii = TFBSDuplication(ii);
-		// (*pdup_len)++;
 		mutant_genome = true;
-		// cout << "done" << endl;
 		ii++;
 	}
 
 	else if(uu < tfbs_duplication_mu+tfbs_deletion_mu)
 	{
-		// cout << "TFBS del" << endl;
 		ii = TFBSDeletion(ii);
 		(*pdel_len)++;
 		mutant_genome = true;
-		// cout << "done" << endl;
 	}
 
 	else
@@ -537,16 +516,12 @@ Genome::iter Genome::GeneDeletion(iter ii, int* pdel_len)
 	last++;//one further than the gene position
 	first=FindFirstTFBSInFrontOfGene(ii);//first tfbs in front of gene
 
-	// int type_abundance = CountTypeAbundance(abs((*ii)->type));
-	// if(type_abundance < 2) LoseGeneType(abs((*ii)->type));	//If gene deletion means losing a gene type, shrink GeneStates and GeneTypes vectors. This should never happen (OBSOLETE), because when a gene is deleted it is only deleted from the child part of the genome, so the gene type will still be present on the parental part of the genome.
-	// else	DecrementExpressionOfType(ii);	//Decrement the expression of the just-deleted gene-type.
-
 	//Decrement the number of beads and the number of genes.
 	del_length = distance(first, last);
 	g_length -= del_length;
 	gnr_genes--;
 	(*pdel_len) += del_length;
-	// gnr_genes--;//you know one gene is removed
+
 	jj=first;
 	while( jj != last )
 	{
@@ -707,10 +682,8 @@ void Genome::PotentialTypeChange(iter ii)
 
 			if(genes_are_the_same)
 			{
-				// if(type_abundance < 2)	LoseGeneType(abs((*ii)->type));		//Should be OBSOLETE because there is always still the parental copy for which we have an element in GeneStates and GeneTypes.
-				// else	DecrementExpressionOfType(ii);		//Instead this should happen.
 				(*ii)->type = abs((*jj)->type);		//Convert to existing gene type.
-				// IncrementExpressionOfType(ii);	//We increment the expression of the new gene type. NOTE: perhaps the newly replicated type is not immediately expressed, in which case I could comment this out.
+				// IncrementExpressionOfType(ii);	//We could here increment the expression of the new type if it was expressed or something
 				found_matching_type = true;
 				return;		//We have found a match, converted the gene; time to try mutation of the next bead.
 			}
@@ -719,8 +692,6 @@ void Genome::PotentialTypeChange(iter ii)
 	}
 	if(found_matching_type == false && (type_abundance > 1 || (*ii)->type==0))	//We haven't been able to convert it to an existing type, so let's define it as a new type. type_abundance should always be more than 1 because there is always an original copy on the parental section of the genome.
 	{
-		// Gene* gene = dynamic_cast<Gene*>(*ii);
-		// gene_iter git;
 		list<int>::iterator tit;
 
 		for(int x=1; x<1001; x++)		//Find a not yet used number to use as the type.
@@ -732,15 +703,6 @@ void Genome::PotentialTypeChange(iter ii)
 				(*ii)->type = x;
 				return;
 			}
-
-			// git = find(GeneTypes->begin(), GeneTypes->end(), x);
-			// if(git == GeneTypes->end())	//X is not yet used as a gene type.
-			// {
-			// 	GeneStates->push_back(gene->expression);		//If gene is active it becomes inactive after a mutation.	NOTE: it might make a difference whether new genes are always inactive or whether they retain their expression level after a mutation.
-			// 	gene->type = x;
-			// 	GeneTypes->push_back(x);
-			// 	break;
-			// }
 		}
 	}
 }
@@ -1159,9 +1121,6 @@ int Genome::MatchBitStrings(Bead* b_tfbs, Bead* b_gene){
 	{
     if(tfbs->binding_site[k] != gene->binding_domain[k]) binding_strength++;		//We do complementary pairing for the beauty of it (but also expected in visualisations).
   }
-
-  // return pow((double)binding_strength/(double)binding_length, tfbs_selection_exponent-min(4*(Time/500000),4));
-	// return pow((double)binding_strength/(double)binding_length, tfbs_selection_exponent);
 	return binding_strength;
 }
 
