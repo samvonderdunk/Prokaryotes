@@ -260,13 +260,13 @@ void Genome::ReplicateGenomeStep(int env)
 	int gene_length = 0;
 	int repl_remaining_steps = repl_step_size;
 
+	repl_remaining_steps -= env;	//Subtract a number of steps defined by the current environment.
+
 	if (repl_step_noise)
 	{
-		int repl_noise = ( (int)(uniform()*2) == 1 ) ? repl_step_size:-repl_step_size;
-		repl_remaining_steps = ( (int)(uniform()*2) == 1 ) ? repl_step_size:repl_step_size+repl_noise;
+		int repl_noise = ( (int)(uniform()*2) == 1 ) ? repl_remaining_steps:-repl_remaining_steps;
+		repl_remaining_steps = ( (int)(uniform()*2) == 1 ) ? repl_remaining_steps:repl_remaining_steps+repl_noise;
 	}
-
-	repl_remaining_steps -= env;	//Subtract a number of steps defined by the current environment.
 
 	if (repl_remaining_steps == 0)	return;
 
