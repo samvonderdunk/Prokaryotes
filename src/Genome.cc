@@ -479,10 +479,6 @@ void Genome::ReadInitialGenome()
 	if(genestate_init == "")	for(int g=0; (size_t)g<GeneTypes->size(); g++)	GeneStates->push_back((int)(uniform()*2));
 	else if(genestate_init != "G1" && genestate_init != "S" && genestate_init != "G2" && genestate_init != "M")	ReadInitialGeneStates();	//if genestate_input was specified, the GeneStates should have already been initialised during the reading of the genome.
 
-	//Set forks.
-	pos_fork = 0;
-	pos_anti_ori = g_length;
-
 	SetClaimVectors();
 }
 
@@ -849,7 +845,7 @@ void Genome::GenomeToNetwork(double** Network)
 	GeneActivity.resize(GeneTypes->size(),0);
 
 	it = BeadList->begin();
-	while(it != BeadList->end() && bead_count < pos_anti_ori)
+	while(it != BeadList->end())
 	{
 		if(IsGene(*it))
 		{
@@ -865,7 +861,7 @@ void Genome::GenomeToNetwork(double** Network)
 
 	bead_count = 0;
 	it = BeadList->begin();
-	while(it != BeadList->end() && bead_count < pos_anti_ori)
+	while(it != BeadList->end())
 	{
 		if(IsTFBS(*it))
 		{
