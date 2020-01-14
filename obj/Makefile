@@ -32,7 +32,7 @@ BINPATH = ../
 LIBPATH = ../lib
 
 # Project var
-PROJECT = Prok_Version
+PROJECT = Prok_Muts_At_Divo
 LIBRARY = mor
 ALL =  Bead.o Gene.o TFBS.o House.o Genome.o Prokaryote.o Population.o World.o dSFMT.o FossilRecord.o
 OBJECTS = $(ALL)
