@@ -47,7 +47,7 @@ const int repl_step_size = 80;
 const bool replicate_entire_genes = false;
 const bool repl_step_noise = false;
 const int replication_time = 1;
-const int nr_household_genes = 50;
+const int nr_household_genes = 100;
 
 // Mutations
 const double gene_threshold_mu = 0.001;
@@ -58,12 +58,12 @@ const double tfbs_binding_site_mu = 0.001;
 const double tfbs_activity_mu = 0.001;
 
 const double gene_duplication_mu = 0.001;
-const double gene_innovation_mu = 0.0001; //I set this 10x lower than other mutation rates on purpose.
+const double gene_innovation_mu = 0.001; //This is a per-genome rate, so for many genomes (~10 genes) it will be 10 times lower than dupl./del. rates given the same parameter value.
 const double gene_deletion_mu = 0.001;
 const double gene_shuffle_mu = 0.001;
 
 const double tfbs_duplication_mu = 0.001;
-const double tfbs_innovation_mu = 0.001;
+const double tfbs_innovation_mu = 0.01;
 const double tfbs_deletion_mu = 0.001;
 const double tfbs_shuffle_mu = 0.001;
 
@@ -77,7 +77,7 @@ const double empty_tf_claim_zero = 1.0;
 //constants for Population.cc
 const int TimeZero=0;
 const int SimTime=1000000;
-const int TimeTerminalOutput = 1;  //Note that this is also the check for extinction, so let it check!
+const int TimeTerminalOutput = 100;  //Note that this is also the check for extinction, so let it check!
 const int TimeSaveGrid = 10000; //How many timesteps to save the whole grid as raw data.
 const int TimeSaveBackup = 10000;
 const int TimePruneFossils = 10000;
@@ -90,7 +90,7 @@ const int generation_sample = 10000;
 
 const bool environmental_noise = false;  //Actually used in Genome.cc and Population.cc (for initialisation).
 const double environmental_change_rate = 0.01;
-const int environmental_variation = 10;
+const int environmental_variation = 5;
 const bool resource_dependent_replication = false;
 const bool environmental_gradient = true;
 
