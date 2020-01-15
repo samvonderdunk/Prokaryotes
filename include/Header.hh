@@ -58,12 +58,12 @@ const double tfbs_binding_site_mu = 0.001;
 const double tfbs_activity_mu = 0.001;
 
 const double gene_duplication_mu = 0.001;
-const double gene_innovation_mu = 0.0001; //I set this 10x lower than other mutation rates on purpose.
+const double gene_innovation_mu = 0.001; //I set this 10x lower than other mutation rates on purpose.
 const double gene_deletion_mu = 0.001;
 const double gene_shuffle_mu = 0.001;
 
 const double tfbs_duplication_mu = 0.001;
-const double tfbs_innovation_mu = 0.001;
+const double tfbs_innovation_mu = 0.01;
 const double tfbs_deletion_mu = 0.001;
 const double tfbs_shuffle_mu = 0.001;
 
@@ -83,7 +83,7 @@ const int TimeSaveBackup = 10000;
 const int TimePruneFossils = 1000;
 const int TimeOutputFossils = 10000;
 
-const double death_rate = 0.01;
+const double death_rate = 0.001;
 const double repl_rate = 1.0;
 const int replication_neighbourhood = 3;  //i.e. a 3x3 grid represents the neighbourhood.
 const int generation_sample = 10000;

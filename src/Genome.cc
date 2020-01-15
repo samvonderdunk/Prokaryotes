@@ -301,7 +301,7 @@ void Genome::ReplicateGenomeStep(int env, int res)
 	iter it, start, end, it_new;
 	Bead* bead;
 	int gene_length = 0;
-	int repl_remaining_steps = repl_step_size;
+	int repl_remaining_steps = repl_step_size;	// - (int)(Time/100000);
 
 	repl_remaining_steps -= env;	//Subtract a number of steps defined by the current environment.
 
