@@ -734,7 +734,9 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 
 				else
 				{
-					DeathOfProkaryote(i, j);	//The cell did not spend enough time replicating in S-stage.
+					if(uniform() < m_death_rate)	DeathOfProkaryote(i, j);	//The cell did not spend enough time replicating in S-stage.
+					// if(uniform() < m_death_rate * (int)(Time/100000))	DeathOfProkaryote(i, j);
+					else	PPSpace[i][j]->Stage = 0;
 				}
 			}
 
