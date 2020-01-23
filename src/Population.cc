@@ -374,7 +374,7 @@ void Population::ReproduceMasterGenome()
 	//Maybe this is not very efficient, since the programme will be writing between each reproduction event; but it is definitely simple.
 	for(int n=0; n<NrMutants; n++)
 	{
-		while(PP->G->pos_fork < PP->G->pos_anti_ori)	PP->Replicate(0);	//Set environment to zero, but keep replicating until you're finished.
+		while(PP->G->pos_fork < PP->G->pos_anti_ori)	PP->Replicate(0,8);	//Set environment to zero, but keep replicating until you're finished.
 		CP = new Prokaryote();
 		CP->Mitosis(PP, 1);	//It does not matter which fossil_id each child gets, so I say 1.
 		if(Parent_Genome != CP->G->PrintContent(NULL, false, false)) cout << "Child #" << n << ":\t" << CP->G->PrintContent(NULL, false, false) << endl;
@@ -426,7 +426,7 @@ void Population::FollowSingleIndividual()
 
 			if (PP->Stage == 2)
 			{
-				PP->Replicate(Environment);
+				PP->Replicate(Environment, 8);
 				PP->time_replicated++;
 			}
 			else if(PP->Stage == 4)
@@ -580,7 +580,7 @@ void Population::ExploreAttractorLandscape()
 void Population::UpdatePopulation()	//This is the main next-state function.
 {
 	int update_order[NR*NC];
-	int u, i, j, nrow, ncol, random_neighbour, ni, nj;
+	int u, i, j, nrow, ncol, random_neighbour, ni, nj, resource;
 	double chance;
 
 	if(Time==TimeZero)	//Initialise some of my output stats for the first time.
@@ -625,11 +625,11 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 
 			//Wrap grid boundaries
 			int nrow = i+ni-1;
-			if(nrow < 0)	nrow = NR-1;
+			if(nrow < 0)	nrow += NR;
 			else if(nrow >= NR)	nrow = 0;
 
 			int ncol = j+nj-1;
-			if(ncol < 0)	ncol = NC-1;
+			if(ncol < 0)	ncol += NC;
 			else if(ncol >= NC)	ncol = 0;
 
 			if (PPSpace[nrow][ncol]!=NULL)	//Random neighbour is alive.
@@ -665,7 +665,9 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 
 				if (PPSpace[i][j]->Stage == 2)
 				{
-					PPSpace[i][j]->Replicate(Environment);
+					if(resource_dependent_replication)	resource = 8 - NeighbourhoodDensity(i, j);
+					else	resource = 8;	//8 is the maximal resource level.
+					PPSpace[i][j]->Replicate(Environment,resource);
 					PPSpace[i][j]->time_replicated++;
 				}
 				else if(PPSpace[i][j]->Stage == 4)	PPSpace[i][j]->ready_for_division = true;
@@ -689,6 +691,27 @@ void Population::SetEnvironment()
 	{
 		Environment = (int)(uniform()*(2*environmental_variation+1) - environmental_variation);
 	}
+}
+
+int Population::NeighbourhoodDensity(int i, int j)
+{
+	int ii, jj, nrow, ncol, density=0;
+
+	for (ii=i-1; ii<=i+1; ii++) for (jj=j-1; jj<=j+1; jj++)
+	{
+		if (ii == i && jj == j)	continue;
+
+		if (ii < 0)	nrow = ii + NR;	//-1 becomes -1+100=99, i.e. the last index of a row with 100 sites (0-99).
+		else if (ii >= NR)	nrow = ii - NR;
+		else	nrow = ii;
+		if (jj < 0)	ncol = jj + NC;
+		else if (jj >= NC)	ncol = jj - NC;
+		else	ncol = jj;
+
+		if (PPSpace[nrow][ncol] != NULL)	density++;
+	}
+
+	return density;
 }
 
 void Population::PruneFossilRecord()

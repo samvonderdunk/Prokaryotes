@@ -32,13 +32,13 @@ void Prokaryote::ClonePPFromPP(Prokaryote* PP_template, int tot_prok_count)
 	mutant = PP_template->mutant;	//If you clone a mutant (or the first prokaryote), its clone will also count as a mutant.
 }
 
-void Prokaryote::Replicate(int env)
+void Prokaryote::Replicate(int env, int res)
 {
 	if (G->pos_fork != G->pos_anti_ori)	//If the fork is has reached the opposite of ORI of the genome, there is nothing to replicate.
 	{
 		if (uniform() <= 1.0)	//later the chance that replication proceeds one step depends on several things.
 		{
-			G->ReplicateGenomeStep(env);
+			G->ReplicateGenomeStep(env, res);
 		}
 	}
 }
@@ -114,8 +114,8 @@ void Prokaryote::UpdateCellCycle()	//Check whether changes in GeneStates make us
 	{
 		if (s==Stage)
 		{
-			if (Stage == 4 || (Stage == 2 && G->pos_fork != G->pos_anti_ori))	//If you were in Stage 4, you have to earn it again; you are set back to stage 3 and evaluated for matching stage 4 anew.
-			// if (Stage == 4 || (Stage == 2 && (time_replicated < replication_time || G->pos_fork != G->pos_anti_ori)))	//Substitute for the above line to learn prokaryotes the trick of S-stage extension.
+			// if (Stage == 4 || (Stage == 2 && G->pos_fork != G->pos_anti_ori))	//If you were in Stage 4, you have to earn it again; you are set back to stage 3 and evaluated for matching stage 4 anew.
+			if (Stage == 4 || (Stage == 2 && (time_replicated < replication_time || G->pos_fork != G->pos_anti_ori)))	//Substitute for the above line to learn prokaryotes the trick of S-stage extension.
 			// if(Stage == 2 && (time_replicated < replication_time || G->pos_fork != G->pos_anti_ori))	//Prokaryotesv2.3: You don't stay in M-stage anymore, so the above lines are deprecated.
 			{
 				Stage--;

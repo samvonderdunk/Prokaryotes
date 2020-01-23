@@ -48,6 +48,7 @@ class Population
 		void UpdatePopulation();
 		void DeathOfProkaryote(int i, int j);
 		void SetEnvironment();
+		int NeighbourhoodDensity(int i, int j);
 
 		void PruneFossilRecord();
 		double MatrixDistance(Prokaryote* PP1, Prokaryote* PP2);

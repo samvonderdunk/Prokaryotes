@@ -85,6 +85,7 @@ const int generation_sample = 10000;
 const bool environmental_noise = true;  //Actually used in Genome.cc and Population.cc (for initialisation).
 const double environmental_change_rate = 0.01;
 const int environmental_variation = 10;
+const bool resource_dependent_replication = true;
 
 //constants for Prokaryote.cc
 

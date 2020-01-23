@@ -36,7 +36,7 @@ class Genome {
   void DevelopChildrenGenomes(Genome* G_replicated);
   void SplitGenome(Genome* G_replicated);
 
-  void ReplicateGenomeStep(int env);
+  void ReplicateGenomeStep(int env, int res);
   iter GeneMutate(iter ii, int* pdel_len);
   iter TFBSMutate(iter ii, int* pdel_len);
 
