@@ -5,6 +5,7 @@
 #include "Bead.hh"
 #include "Gene.hh"
 #include "TFBS.hh"
+#include "House.hh"
 #include <typeinfo>
 
 class Genome {
@@ -23,6 +24,7 @@ class Genome {
 
   int g_length;
   int gnr_genes;
+  int gnr_houses;
   int pos_fork, pos_anti_ori;  //position of the fork moving backwards through the parent genome and position of the origin of replication equal to the starting position of the fork.
   bool mutant_genome;
 
@@ -39,6 +41,7 @@ class Genome {
   void ReplicateGenomeStep(int env, int res);
   iter GeneMutate(iter ii, int* pdel_len);
   iter TFBSMutate(iter ii, int* pdel_len);
+  iter HouseMutate(iter ii, int* pdel_len);
 
   iter GeneDuplication(iter ii, int* pdup_len);
   iter GeneInnovation();
@@ -49,6 +52,9 @@ class Genome {
   void TFBSInnovation();
   iter TFBSDeletion(iter ii);
   iter TFBSShuffle(iter ii);
+
+  iter HouseDuplication(iter ii);
+  iter HouseDeletion(iter ii);
 
   iter FindFirstTFBSInFrontOfGene(iter ii) const;
   iter FindRandomGenePosition() const;
@@ -74,6 +80,7 @@ class Genome {
 
   bool IsGene(Bead* bead) const;
   bool IsTFBS(Bead* bead) const;
+  bool IsHouse(Bead* bead) const;
   void DecrementExpressionOfType(iter ii);
   void IncrementExpressionOfType(iter ii);
   int FindIndexOfType(int type);

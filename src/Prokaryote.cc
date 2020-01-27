@@ -62,6 +62,18 @@ void Prokaryote::Mitosis(Prokaryote* parent, int tot_prok_count)
 	// parent->fitness_deficit = 0.;	//It can try to replicate better next time.
 	parent->nr_offspring++;
 	parent->time_replicated = 0;
+
+	if (house_duplication_mu > 0.0 || house_deletion_mu > 0.0)	//We only have to check the number of household genes if they can actually mutate.
+	{
+		int count_houses = 0;
+		Genome::iter it = G->BeadList->begin();	//The number of household genes defines the fitness deficit.
+		while (it != G->BeadList->end())
+		{
+			if (G->IsHouse(*it))	count_houses++;
+			it++;
+		}
+		fitness_deficit = abs(nr_household_genes - count_houses) / (float)10;
+	}
 }
 
 void Prokaryote::EmptyProkaryote()

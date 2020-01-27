@@ -5,6 +5,7 @@ Genome::Genome() {
 	GeneStates=NULL;
 	GeneTypes=NULL;
 	gnr_genes=0;
+	gnr_houses=0;
 	g_length=0;
 	pos_fork=0;
 	pos_anti_ori=0;
@@ -74,6 +75,7 @@ void Genome::CloneGenome(const Genome* G_template)	//Used to copy genome of prok
 	}
 
 	gnr_genes = G_template->gnr_genes;
+	gnr_houses = G_template->gnr_houses;
 	g_length = G_template->g_length;
 	pos_fork = G_template->pos_fork;
 	pos_anti_ori = G_template->g_length;
@@ -102,6 +104,10 @@ void Genome::DevelopChildrenGenomes(Genome* G_replicated)	//Function gets iterat
 			G_replicated->DecrementExpressionOfType(it);
 			G_replicated->gnr_genes--;
 		}
+		else if(IsHouse(*it))
+		{
+			G_replicated->gnr_houses--;
+		}
 		G_replicated->g_length--;
 		it++;
 	}
@@ -110,6 +116,7 @@ void Genome::DevelopChildrenGenomes(Genome* G_replicated)	//Function gets iterat
 	G_replicated->pos_fork = 0;
 
 	gnr_genes = G_replicated->gnr_genes;	//Copy gnr_genes to child before mutations have happened (and adjust during mutations).
+	gnr_houses = G_replicated->gnr_houses;
 
 	if (mutations_on)	//START mutations.
 	{
@@ -133,6 +140,11 @@ void Genome::DevelopChildrenGenomes(Genome* G_replicated)	//Function gets iterat
 			{
 				MutationList->at(index) = true;
 				it = TFBSMutate(it, pdel_length);
+			}
+			else if(IsHouse(*it))
+			{
+				MutationList->at(index) = true;
+				it = HouseMutate(it, pdel_length);
 			}
 			index++;
 		}
@@ -161,6 +173,11 @@ void Genome::DevelopChildrenGenomes(Genome* G_replicated)	//Function gets iterat
 				{
 					it=TFBSDuplication(it);
 					(*pdup_length)++;	//TFBS duplication always just adds one bead.
+				}
+				else if (IsHouse(*it))
+				{
+					it=HouseDuplication(it);
+					(*pdup_length)++;
 				}
 			}
 			else
@@ -221,8 +238,6 @@ void Genome::DevelopChildrenGenomes(Genome* G_replicated)	//Function gets iterat
 		}
 		it++;
 	}
-
-
 
 	if (g_length > 500)	//We only check after the full replication step, not after each replicated bead.
 	{
@@ -303,6 +318,10 @@ void Genome::ReplicateGenomeStep(int env, int res)
 		{
 			gnr_genes++;
 			IncrementExpressionOfType(it_new);
+		}
+		else if (IsHouse(*it_new))
+		{
+			gnr_houses++;
 		}
 
 		it++;
@@ -461,6 +480,30 @@ Genome::iter Genome::TFBSMutate(iter ii, int* pdel_len)
 		}
 		ii++;
 	}
+	return ii;
+}
+
+Genome::iter Genome::HouseMutate(iter ii, int* pdel_len)
+{
+	double uu = uniform();
+
+	if(uu < house_duplication_mu)
+	{
+		// cout << "Hous dup" << endl;
+		(*ii)->type = -(*ii)->type;
+		mutant_genome = true;
+		ii++;
+		// cout << "House duped" << endl;
+	}
+	else if(uu < house_duplication_mu+house_deletion_mu)
+	{
+		// cout << "HOuse del" << endl;
+		ii = HouseDeletion(ii);
+		(*pdel_len)++;
+		mutant_genome = true;
+	}
+	else	ii++;
+
 	return ii;
 }
 
@@ -634,6 +677,35 @@ Genome::iter Genome::TFBSShuffle(iter ii)
 	return ii;
 }
 
+Genome::iter Genome::HouseDuplication(iter ii)
+{
+	iter tt, upstream;
+	int randpos;
+
+	(*ii)->type = -(*ii)->type;	//Make the type positive, so that we know that the just duplicated TFBS has been randomly moved to a new position on the genome.
+	House* housenew = new House();
+
+	tt = (*BeadList).begin();
+	randpos = (int)(uniform()*g_length);
+	advance(tt,randpos);			// tt holds random spot in the genome e.g. |---------------x-----------|
+	tt = (*BeadList).insert(tt, housenew);	//Insert tfbs-copy to the left of a random position in the genome (tt).
+
+	gnr_houses++;
+	g_length++;
+	ii++;
+	return ii;
+}
+
+Genome::iter Genome::HouseDeletion(iter ii)
+{
+	delete (*ii);
+	ii=(*BeadList).erase(ii);
+
+	gnr_houses++;
+	g_length--;
+	return ii;
+}
+
 Genome::iter Genome::FindFirstTFBSInFrontOfGene(iter ii) const
 {
 	reviter rii(ii);	//BEHIND in this case means an element to the left in the list (i.e if ii points to the 6th element, rii(ii) will make rii point to the 5th element). The function .base() as used below will make rii.base() point to the 6th element again.
@@ -641,7 +713,7 @@ Genome::iter Genome::FindFirstTFBSInFrontOfGene(iter ii) const
 	reviter jj = (*BeadList).rend();//search should be bounded
 	while(rii != jj)//begin not yet reached
 	{
-		if(!IsGene(*rii))	rii++;
+		if(IsTFBS(*rii))	rii++;
 		else	jj = rii;
 	}
 	return jj.base();
@@ -654,16 +726,16 @@ Genome::iter Genome::FindRandomGenePosition() const
 	iter i, ii;
 	int randpos;
 
-	if(gnr_genes==0)	return (*BeadList).end();
+	if(gnr_genes+gnr_houses==0)	return (*BeadList).end();
 	else
 	{
 		i=(*BeadList).begin();
 		while(i != (*BeadList).end())
 		{
-			if(IsGene(*i))	pos.push_back(i);
+			if(IsGene(*i) || IsHouse(*i))	pos.push_back(i);
 			i++;
 		}
-		randpos=(int)(uniform()*gnr_genes);	//If you found the first gene, randpos will be 0 (no need to advance to another gene); if you find the last gene, randpos will be gnr_genes-1 which is enough to reach the gnr_genes'th gene.
+		randpos=(int)(uniform()*(gnr_genes+gnr_houses));	//If you found the first gene, randpos will be 0 (no need to advance to another gene); if you find the last gene, randpos will be gnr_genes-1 which is enough to reach the gnr_genes'th gene.
 		ii = (*boost::next(pos.begin(),randpos));	//Possibly try advance(ii, randpos) instead.
 		return ii;
 	}
@@ -798,9 +870,11 @@ void Genome::ReadBeadsFromString(string genome)
 	int index;
 	bool StageInit[5];
 	gnr_genes = 0;
+	gnr_houses = 0;
 	g_length = 0;
 	Gene* gene;
 	TFBS* tfbs;
+	House* house;
 	int type, threshold, activity, q;
 	char* buffer;
 	bool bitstring[binding_length];
@@ -855,6 +929,13 @@ void Genome::ReadBeadsFromString(string genome)
 			g_length++;
 			delete [] buffer;	//I think this prevents a memory leak. Otherwise buffer simply frees up new memory the next time it says "buffer = new char()". Because I did not use "new []" to create the variable, I should not use "delete []" to free up the memory.
 			buffer = NULL;
+		}
+		else if (bead[1] == 'H')	//Bead is a house
+		{
+			house = new House();
+			(*BeadList).push_back(house);
+			gnr_houses++;
+			g_length++;
 		}
 		else	//Bead is a tfbs
 		{
@@ -912,10 +993,21 @@ void Genome::InitialiseRandomGenome()
 {
 	BeadList = new list<Bead*>();	//Create the empty beadlist for this genome.
 	gnr_genes = 0;
+	gnr_houses = 0;
 	g_length = 0;
 
 	Gene* gene;
 	TFBS* tfbs;
+	House* house;
+
+	//Just place all household genes at the beginning for now.
+	for (int houses=1; houses<=nr_household_genes; houses++)
+	{
+		house = new House();
+		(*BeadList).push_back(house);
+		gnr_houses++;
+		g_length++;
+	}
 
 	//For now, I don't mind that genomes are ordered by gene type.
 	for (int gene_type=1; gene_type<=init_nr_gene_types; gene_type++)
@@ -1246,6 +1338,10 @@ bool Genome::IsTFBS(Bead* bead) const {
 	return (bool)(typeid(*bead) == typeid(TFBS));
 }
 
+bool Genome::IsHouse(Bead* bead) const {
+	return (bool)(typeid(*bead) == typeid(House));
+}
+
 void Genome::DecrementExpressionOfType(iter ii)
 {
 	Gene* gene = dynamic_cast<Gene*>(*ii);
@@ -1315,6 +1411,11 @@ string Genome::PrintContent(list<Bead*> * chromosome, bool terminal, bool only_p
 			stringtemp << tfbs_color_prefix << tfbs->activity << ":";
 			for(int k=0; k<binding_length; k++)	stringtemp << tfbs->binding_site[k];
 			stringtemp << tfbs_color_suffix;
+			GenomeContent+=stringtemp.str();
+			stringtemp.clear();
+		}
+		else if(IsHouse(*i)) {
+			stringtemp << "\033[95mH\033[0m";
 			GenomeContent+=stringtemp.str();
 			stringtemp.clear();
 		}
