@@ -385,6 +385,89 @@ void Population::ReproduceMasterGenome()
 	PP = NULL;
 }
 
+void Population::ScanMutationalPath()
+{
+	Prokaryote* IP;
+	Prokaryote* PP;
+	Prokaryote* CP;
+	bool PhenotypicChange;	//Definition of "phenotype" can be one of two: 1) qualitative network configuration OR 2) expression pattern through time.
+	int MutAttempts;	//If we have to try to many mutations to find one that maintains the phenotype we choose to stop.
+
+	IP = new Prokaryote();
+	IP->EmptyProkaryote();
+	IP->InitialiseProkaryote();
+	PP = new Prokaryote();
+	PP->EmptyProkaryote();
+	PP->G->CloneGenome(IP->G);
+	cout << "\nInitial genome:\t" << IP->G->PrintContent(NULL, false, false) << endl;
+
+	for(Time=0; Time<SimTime+1; Time++)	//We will do as many steps over the mutational path as given by SimTime.
+	{
+		CP = new Prokaryote();
+		CP->EmptyProkaryote();
+		CP->G->CloneGenome(PP->G);	//We start with the "child" being the same as the parent
+		MutAttempts = 0;
+		while( (CP->G->PrintContent(NULL, false, false) == PP->G->PrintContent(NULL, false, false)) || PhenotypicChange)	//We only select a new individual if it does not have the same genome as its parent (the current prokaryote) but is also not too different phenotypically.
+		{
+			delete CP;
+			CP = NULL;
+			while(PP->G->pos_fork < PP->G->pos_anti_ori) PP->Replicate(0,8);
+			CP = new Prokaryote();
+			CP->EmptyProkaryote();
+			CP->Mitosis(PP, 1);
+			// PhenotypicChange = QualitativeNetworkChange(IP, CP);	//One can also choose for the more dynamic option of comparing the child with its parent, but then the definition of the network might change over time.
+			PhenotypicChange = CompareExpressionProgression(IP, CP, 4);	//Option 2: update both genomes' expression for x timesteps, starting in the expression provided through the command-line. If the second genome never deviated from the first in terms of the 5 main TFs, there has been no qualitative phenotypic change. You can compare over a larger number of timesteps if you want both to do many exactly synchronized cycles. This option requires a lot more trying, so runs slower.
+			MutAttempts++;
+			if(MutAttempts >= 1000000)
+			{
+				cout << "Stopped scanning mutational path -- path too narrow (" << MutAttempts << " attempts)" << endl;
+				exit(1);
+			}
+		}
+		cout << Time+1 << " steps:\t" << CP->G->PrintContent(NULL, false, false) << endl;
+		//CP becomes the new "parent" for the next step, so we lose the data held by PP, make it the same as CP, and then erase CP, so that the next timestep we can make it a new child.
+		delete PP;
+		PP = NULL;
+		PP = new Prokaryote();
+		PP->EmptyProkaryote();
+		PP->G->CloneGenome(CP->G);
+		delete CP;
+		CP = NULL;
+	}
+}
+
+bool Population::CompareExpressionProgression(Prokaryote* PP1, Prokaryote* PP2, int time_window)
+{
+	int qualitative_change = false;
+	Genome::gene_iter git;
+
+	for (int wtime=0; wtime<time_window; wtime++)
+	{
+		PP1->G->UpdateGeneStates();
+		PP2->G->UpdateGeneStates();
+
+		//Check that the 2nd genome has the 5 main types. We assume the 1st genome does.
+		for (int gt=1; gt<=5; gt++)
+		{
+			git = find(PP2->G->GeneTypes->begin(), PP2->G->GeneTypes->end(), gt);
+			if (git == PP2->G->GeneTypes->end())
+			{
+				qualitative_change = true;
+				break;
+			}
+		}
+
+		//Only compare the first 5 genes' expression. For now it matters how many copies are expressed bc we stupidly compare these strings.
+		if (PP1->G->PrintGeneStateContent(true).substr(1, 13) != PP2->G->PrintGeneStateContent(true).substr(1, 13))
+		{
+			qualitative_change = true;
+			break;
+		}
+	}
+
+	return qualitative_change;
+}
+
 void Population::FollowSingleIndividual()
 {
 	Prokaryote* PP, *CP;
@@ -800,6 +883,49 @@ double Population::MatrixDistance(Prokaryote* PP1, Prokaryote* PP2)
 	N2 = NULL;
 
 	return Distance;
+}
+
+bool Population::QualitativeNetworkChange(Prokaryote* PP1, Prokaryote* PP2)	//PP1 is used as a qualitative (predefined) network. If it has a positive interaction between two genes, PP2 should have an interaction that is at least +0.5 (-0.5 for negative, or between -0.5 and 0.5 for no interaction).
+{
+	bool qualitative_change = false;
+	double** N1;
+	double** N2;
+	N1 = new double* [5];
+	N2 = new double* [5];
+	for (int row=0; row<5; row++)
+	{
+		N1[row] = new double[8];
+		N2[row] = new double[8];
+	}
+
+	for(int row=0; row<5; row++)	for(int col=0; col<8; col++)
+	{
+		N1[row][col] = .0;
+		N2[row][col] = .0;
+	}
+	PP1->G->GenomeToNetwork(N1);
+	PP2->G->GenomeToNetwork(N2);
+
+	for(int row=0; row<5; row++)	for(int col=0; col<8; col++)
+	{
+		if (N1[row][col] < -0.1 && N2[row][col] > -0.5)	qualitative_change = true;
+		else if ( (N1[row][col] >= -0.1 && N1[row][col] <= 0.1) && (N2[row][col] <= -0.5 || N2[row][col] >= 0.5) ) qualitative_change = true;
+		else if (N1[row][col] > 0.1 && N2[row][col] < 0.5) qualitative_change = true;
+	}
+
+	for (int row=0; row<5; row++)
+	{
+		delete [] N1[row];
+		N1[row] = NULL;
+		delete [] N2[row];
+		N2[row] = NULL;
+	}
+	delete [] N1;
+	N1 = NULL;
+	delete [] N2;
+	N2 = NULL;
+
+	return qualitative_change;
 }
 
 void Population::PrintFieldToFile()

@@ -1259,7 +1259,7 @@ void Genome::GenomeToNetwork(double** Network)
 	vector<int> GeneActivity;
 	iter it;
 	gene_iter git;
-	int index, type, gene_act, gene_copynum, bead_count = 0;
+	int index, type, gene_act, gene_copynum, bead_count = 0, claim_value;
 	TFBS* tfbs;
 	TFBS::claim_iter cit;
 	double Effect;
@@ -1299,7 +1299,9 @@ void Genome::GenomeToNetwork(double** Network)
 				type = GeneTypes->at(index);
 				gene_act = GeneActivity.at(index);
 				gene_copynum = TypeCopyNumber.at(index);
-				Effect = (*cit) * gene_copynum * gene_act * tfbs->activity;	//(*cit) is the raw claim, i.e. the bitstring match between TFBS and gene.
+
+				claim_value = (int)(*cit) - 48;
+				Effect = pow( ((double)(claim_value) / (double)(binding_length)), tfbs_selection_exponent) * gene_copynum * gene_act * tfbs->activity;	//(*cit) is the raw claim, i.e. the bitstring match between TFBS and gene.
 
 				if(type <= 5)	NetRow[type] += Effect;
 				else if (Effect > 0)	NetRow[6] += Effect;

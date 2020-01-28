@@ -43,6 +43,8 @@ class Population
 		void ReadAncestorFile();
 
 		void ReproduceMasterGenome();
+		void ScanMutationalPath();
+		bool CompareExpressionProgression(Prokaryote* PP1, Prokaryote* PP2, int time_window);
 		void FollowSingleIndividual();
 		void ExploreAttractorLandscape();
 		void UpdatePopulation();
@@ -52,6 +54,7 @@ class Population
 
 		void PruneFossilRecord();
 		double MatrixDistance(Prokaryote* PP1, Prokaryote* PP2);
+		bool QualitativeNetworkChange(Prokaryote* PP1, Prokaryote* PP2);
 		void PrintFieldToFile();
 		void PrintSampleToFile();
 		void OutputBackup();

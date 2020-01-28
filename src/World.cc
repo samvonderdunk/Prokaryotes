@@ -11,6 +11,7 @@ int Time;
 int initial_seed = time(0);
 string folder = "/linuxhome/tmp/sam/Prokaryotes/";
 bool mutational_neighbourhood = false;
+bool mutational_scanpath = false;
 bool attractor_landscape = false;
 bool follow_single_individual = false;
 int NrMutants = 0;
@@ -42,6 +43,13 @@ int main(int argc, char** argv) {
 		printf("\033[93m### Start ###\033[0m\n");
 		P = new Population();
 		P->ReproduceMasterGenome();
+	}
+
+	else if (mutational_scanpath)
+	{
+		printf("\033[93m### Start ###\033[0m\n");
+		P = new Population();
+		P->ScanMutationalPath();
 	}
 
 	else if (attractor_landscape)
@@ -138,6 +146,12 @@ void Setup(int argc, char** argv) {
 			continue;
 		}
 
+		else if(ReadOut=="-MS")
+		{
+			mutational_scanpath = true;
+			printf("Walking along the neutral mutational path.\n");
+		}
+
 		//If user wants to look at attractor landscape, all possible states will be simulated for one timestep (or a sample of all possible states) and their resulting states will be given as output.
 		else if(ReadOut=="-A" && (i+1)!=argc)
 		{
@@ -206,7 +220,7 @@ void Setup(int argc, char** argv) {
 
 		else	//Print usage/help.
 		{
-			printf("\n\033[93m### Prokaryotes --- usage ###\033[0m\nArgument options:\n   -p [project title]\t\tDefines folder for local storage\n   -s [seed]\t\tSet seed for random number generator (e.g. 211)\n   -i [initial genome]\t\te.g. MRCA.g\n   -g [initial expression]\t\te.g. MRCA_GS.g\n   -e [env]\t\tInitial environment (e.g. -3)\n   -b [backup file]\t\tStart from backup (e.g. /path/backup00090000.txt)\n   -a [ancestor file]\t\tContinue ancestor trace (e.g. /path/anctrace00090000.txt)\n   -nomut\tNo mutations\n Programmes:\n   -M [nr_mutants]\tGenerate mutants\n   -A [nr_states]\tSimulate state-space transitions [nr. of initial states = max(nr_states, total nr. unique states)]\n   -S\t\t\tFollow single immortal individual/lineage through time [simulating until Time==SimTime]\n");
+			printf("\n\033[93m### Prokaryotes --- usage ###\033[0m\nArgument options:\n   -p [project title]\t\tDefines folder for local storage\n   -s [seed]\t\tSet seed for random number generator (e.g. 211)\n   -i [initial genome]\t\te.g. MRCA.g\n   -g [initial expression]\t\te.g. MRCA_GS.g\n   -e [env]\t\tInitial environment (e.g. -3)\n   -b [backup file]\t\tStart from backup (e.g. /path/backup00090000.txt)\n   -a [ancestor file]\t\tContinue ancestor trace (e.g. /path/anctrace00090000.txt)\n   -nomut\tNo mutations\n Programmes:\n   -M [nr_mutants]\tGenerate mutants\n   -MS\t\t\tScan neutral mutational path\n   -A [nr_states]\tSimulate state-space transitions [nr. of initial states = max(nr_states, total nr. unique states)]\n   -S\t\t\tFollow single immortal individual/lineage through time [simulating until Time==SimTime]\n");
 			exit(1);
 		}
 	}

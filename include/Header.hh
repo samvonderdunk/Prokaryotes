@@ -102,6 +102,7 @@ extern int Time;
 extern int initial_seed;
 extern string folder;
 extern bool mutational_neighbourhood;
+extern bool mutational_scanpath;
 extern bool attractor_landscape;
 extern bool follow_single_individual;
 extern int NrMutants;
