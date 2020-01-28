@@ -1387,12 +1387,16 @@ string Genome::PrintContent(list<Bead*> * chromosome, bool terminal, bool only_p
 	string gene_color_suffix = "";
 	string tfbs_color_prefix = "";
 	string tfbs_color_suffix = "";
+	string house_color_prefix = "";
+	string house_color_suffix = "";
 
 	if(terminal==true){
 		gene_color_prefix = "\033[94m";
 		gene_color_suffix = "\033[0m";
 		tfbs_color_prefix = "\033[92m";
 		tfbs_color_suffix = "\033[0m";
+		house_color_prefix = "\033[95m";
+		house_color_suffix = "\033[0m";
 	}
 
 	while(i!=end) {
@@ -1417,7 +1421,7 @@ string Genome::PrintContent(list<Bead*> * chromosome, bool terminal, bool only_p
 			stringtemp.clear();
 		}
 		else if(IsHouse(*i)) {
-			stringtemp << "\033[95mH\033[0m";
+			stringtemp << house_color_prefix << "H" << house_color_suffix;
 			GenomeContent+=stringtemp.str();
 			stringtemp.clear();
 		}
