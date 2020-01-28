@@ -30,9 +30,11 @@ int main(int argc, char** argv) {
 	printf("\n\033[93m### Setup ###\033[0m\n");
 	Population* P;
 	Setup(argc, argv);
+	printf("Function call: ");
+	for(int q=0; q<argc; q++)	printf("%s ", argv[q]);
 	dsfmt_init_gen_rand(&dsfmt, initial_seed);	//Used to seed uniform().
 	srand(initial_seed);	//Used to seed random_shuffle(...).
-	printf("Setup completed...\n\n");
+	printf("\b\nSetup completed...\n\n");
 
 	/* ############## Simulate Mutants ############## */
 	if (mutational_neighbourhood)
