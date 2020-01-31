@@ -674,11 +674,7 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 		cum_fit_def = 0.0;
 	}
 
-	if(Time%TimeSaveGrid==0)
-	{
-		if(NR*NC > 3000)	PrintSampleToFile();
-		else	PrintFieldToFile();
-	}
+	if(Time%TimeSaveGrid==0)	PrintFieldToFile();
 	if(Time%TimeTerminalOutput==0)	ShowGeneralProgress();
 	if(Time%TimePruneFossils==0 && Time!=0)	PruneFossilRecord();
 	if(Time%TimeOutputFossils==0 && Time!=0)	Fossils->ExhibitFossils();
@@ -947,16 +943,14 @@ void Population::PrintFieldToFile()
 		if(PPSpace[i][j]==NULL){
 		 	fprintf(f, "0\n");
 		}
-		else{		//Print internal state and genome of prokaryote to file.
-			fprintf(f, "%s\t", PPSpace[i][j]->G->PrintGeneStateContent(false).c_str());
-			fprintf(f, "%s\t", PPSpace[i][j]->G->PrintGeneTypeContent().c_str());
-			fprintf(f, "%s\n", PPSpace[i][j]->G->PrintContent(NULL, false, true).c_str());
+		else{		//Print relevant variables to make snapshots.
+			fprintf(f, "%d\t%d\t%d\t%d\n", PPSpace[i][j]->Stage, PPSpace[i][j]->G->g_length, PPSpace[i][j]->G->gnr_genes, PPSpace[i][j]->G->pos_anti_ori);
 		}
 	}
 	fclose(f);
 }
 
-void Population::PrintSampleToFile()
+void Population::PrintSampleToFile()	//Use this if the field is very large and you want to calculate field averages.
 {
 	FILE* f;
 	char OutputFile[800];

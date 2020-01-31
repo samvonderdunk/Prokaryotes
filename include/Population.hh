@@ -57,7 +57,7 @@ class Population
 		double MatrixDistance(Prokaryote* PP1, Prokaryote* PP2);
 		bool QualitativeNetworkChange(Prokaryote* PP1, Prokaryote* PP2);
 		void PrintFieldToFile();
-		void PrintSampleToFile();
+		void PrintSampleToFile();	//Use this for samples of the field.
 		void OutputBackup();
 		void ShowGeneralProgress();
 };
