@@ -13,6 +13,7 @@ class Prokaryote{
 		double fitness_deficit;
 
 		int time_replicated;
+		int time_stationary;
 
 		//For output.
 		int nr_offspring;	//We can measure the length of our beasts' life cycles (i.e. Time - time_of_appearance for all individuals at the point of doing Mitosis with the same nr_offspring).
