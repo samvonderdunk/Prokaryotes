@@ -85,7 +85,7 @@ void Population::InitialisePopulation()
 void Population::ContinuePopulationFromBackup()
 {
 	ReadBackupFile();
-	ReadAncestorFile();	//Currently, the fossil_ids are missing from the backup-file so it is impossible to link the fossils to live prokaryotes. But in the new version this will be possible.
+	if(anctrace_reboot != "")	ReadAncestorFile();	//Currently, the fossil_ids are missing from the backup-file so it is impossible to link the fossils to live prokaryotes. But in the new version this will be possible.
 	// PruneFossilRecord();
 
 	if (environmental_noise)	SetEnvironment();
