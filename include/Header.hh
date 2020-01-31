@@ -69,6 +69,7 @@ const double tfbs_shuffle_mu = 0.001;
 
 const double house_duplication_mu = 0.0001;
 const double house_deletion_mu = 0.0001;
+const double house_shuffle_mu = 0.001;
 
 const int tfbs_selection_exponent = 10;
 const double empty_tf_claim_zero = 1.0;

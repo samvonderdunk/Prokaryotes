@@ -55,6 +55,7 @@ class Genome {
 
   iter HouseDuplication(iter ii);
   iter HouseDeletion(iter ii);
+  iter HouseShuffle(iter ii);
 
   iter FindFirstTFBSInFrontOfGene(iter ii) const;
   iter FindRandomGenePosition() const;

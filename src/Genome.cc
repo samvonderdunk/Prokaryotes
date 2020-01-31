@@ -213,6 +213,7 @@ void Genome::DevelopChildrenGenomes(Genome* G_replicated)	//Function gets iterat
 		{
 			if(IsGene(*it) && uniform() < gene_shuffle_mu)	it=GeneShuffle(it);
 			else if(IsTFBS(*it) && uniform() < tfbs_shuffle_mu)	it=TFBSShuffle(it);
+			else if(IsHouse(*it) && uniform() < house_shuffle_mu) it=HouseShuffle(it);
 			else	it++;
 		}
 
@@ -539,7 +540,7 @@ Genome::iter Genome::GeneDuplication(iter ii, int* pdup_len)
 Genome::iter Genome::GeneInnovation()
 {
 	Gene* gene;
-	iter it, insertsite;
+	iter insertsite;
 
 	gene = new Gene();
 	gene->RandomGene();
@@ -701,8 +702,30 @@ Genome::iter Genome::HouseDeletion(iter ii)
 	delete (*ii);
 	ii=(*BeadList).erase(ii);
 
-	gnr_houses++;
+	gnr_houses--;
 	g_length--;
+	return ii;
+}
+
+Genome::iter Genome::HouseShuffle(iter ii)
+{
+	iter tt, upstream;
+	int randpos;
+	House* house;
+	house = dynamic_cast<House *>(*ii);
+
+	//Create copy and insert at random location.
+	House* housenew = new House();
+
+	tt = (*BeadList).begin();
+	randpos = (int)(uniform()*g_length);
+	advance(tt,randpos);			// tt holds random spot in the genome e.g. |---------------x-----------|
+	tt = (*BeadList).insert(tt, housenew);	//Insert tfbs-copy to the left of a random position in the genome (tt).
+
+	//Remove the old bead.
+	delete (house);
+	ii=(*BeadList).erase(ii);
+
 	return ii;
 }
 
