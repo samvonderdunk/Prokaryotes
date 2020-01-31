@@ -700,6 +700,8 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 		j = update_order[u]%NC;	//Column index.
 		chance = uniform();
 
+		if (environmental_gradient)	GradientEnvironment(i, j);	//Replication chunk size gradient over the field.
+
 		if (PPSpace[i][j]==NULL)	//Site is empty.
 		{
 			int random_neighbour = (int)(uniform()*9);
@@ -774,6 +776,11 @@ void Population::SetEnvironment()
 	{
 		Environment = (int)(uniform()*(2*environmental_variation+1) - environmental_variation);
 	}
+}
+
+void Population::GradientEnvironment(int i, int j)
+{
+	Environment = 10*(j/50);
 }
 
 int Population::NeighbourhoodDensity(int i, int j)

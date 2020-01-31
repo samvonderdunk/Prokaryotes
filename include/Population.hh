@@ -50,6 +50,7 @@ class Population
 		void UpdatePopulation();
 		void DeathOfProkaryote(int i, int j);
 		void SetEnvironment();
+		void GradientEnvironment(int i, int j);
 		int NeighbourhoodDensity(int i, int j);
 
 		void PruneFossilRecord();

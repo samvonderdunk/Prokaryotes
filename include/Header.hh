@@ -92,6 +92,7 @@ const bool environmental_noise = true;  //Actually used in Genome.cc and Populat
 const double environmental_change_rate = 0.01;
 const int environmental_variation = 10;
 const bool resource_dependent_replication = false;
+const bool environmental_gradient = true;
 
 //constants for Prokaryote.cc
 
