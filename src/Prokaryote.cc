@@ -62,6 +62,7 @@ void Prokaryote::Mitosis(Prokaryote* parent, int tot_prok_count)
 	// parent->fitness_deficit = 0.;	//It can try to replicate better next time.
 	parent->nr_offspring++;
 	parent->time_replicated = 0;
+	parent->time_stationary = 0;
 
 	if (house_duplication_mu > 0.0 || house_deletion_mu > 0.0)	//We only have to check the number of household genes if they can actually
 	{
@@ -96,6 +97,7 @@ void Prokaryote::EmptyProkaryote()
 	saved_in_graveyard = false;
 	time_replicated = 0;
 	maturing_time = 0;
+	time_stationary = 0;
 }
 
 void Prokaryote::PrintData(bool include_genome_data)
@@ -107,6 +109,8 @@ void Prokaryote::PrintData(bool include_genome_data)
 	printf("Stage = %d\n", Stage);
 	printf("Time of birth = %d\n", time_of_appearance);
 	printf("Fitness deficit = %f\n", fitness_deficit);
+	printf("Time replicated = %d\n", time_replicated);
+	printf("Time in stationary phase = %d\n", time_stationary);
 	printf("It is %s.\n", (alive)? "alive":"dead");
 	printf("It is %sready for division.\n", (ready_for_division)? "":"not ");
 	printf("It is %sa mutant.\n", ((mutant)? "":"not " ));
@@ -151,6 +155,20 @@ void Prokaryote::UpdateCellCycle()	//Check whether changes in GeneStates make us
 				{
 					time_replicated = 0;	//The death penalty.
 					Stage = 4;
+					break;
+				}
+
+				match_next_state = G->MatchNextState(0);	//Evaluate for G1-stage.
+				if (match_next_state == 5)
+				{
+					time_stationary++;
+					break;
+				}
+				match_next_state = G->MatchNextState(2);	//Evaluate for G2-stage.
+				if (match_next_state == 5)
+				{
+					time_stationary++;
+					break;
 				}
 			}
 

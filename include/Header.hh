@@ -83,8 +83,8 @@ const int TimeSaveBackup = 10000;
 const int TimePruneFossils = 10000;
 const int TimeOutputFossils = 10000;
 
-const double death_rate = 0.01;
-const double m_death_rate = 1.0;
+const double death_rate = 0.005;
+const double m_fail_rate = 0.2;
 const double repl_rate = 1.0;
 const int replication_neighbourhood = 3;  //i.e. a 3x3 grid represents the neighbourhood.
 const int generation_sample = 10000;

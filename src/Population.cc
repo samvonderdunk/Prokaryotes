@@ -713,7 +713,22 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 					}
 
 					//See what was in the neighbour square, whether we have to delete a cell or can just add one straight away.
-					if(PPSpace[nrow][ncol]!=NULL)	DeathOfProkaryote(nrow, ncol);	//This cell is overgrown by PPSpace[i][j].
+					if(PPSpace[nrow][ncol] != NULL)
+					{
+						if (PPSpace[i][j]->time_stationary > PPSpace[nrow][ncol]->time_stationary)
+						{
+							DeathOfProkaryote(nrow, ncol);	//This cell is overgrown by PPSpace[i][j].
+						}
+						else
+						{
+							if (uniform() < m_fail_rate)
+							{
+								PPSpace[i][j]->Abortion();
+							}
+							else	PPSpace[i][j]->Stage = 0;
+							continue;	//After failed division and abortion, we can go to the next site in the field.
+						}
+					}
 					PPSpace[nrow][ncol] = new Prokaryote();
 
 					if(PPSpace[i][j]->nr_offspring == 0)
@@ -733,9 +748,12 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 
 				else
 				{
-					if(uniform() < m_death_rate)	DeathOfProkaryote(i, j);	//The cell did not spend enough time replicating in S-stage.
-					// if(uniform() < m_death_rate * (int)(Time/100000))	DeathOfProkaryote(i, j);
-					else	PPSpace[i][j]->Stage = 0;
+					if(uniform() < m_fail_rate)
+					{
+						// DeathOfProkaryote(i, j);	//The cell did not spend enough time replicating in S-stage.
+						PPSpace[i][j]->Abortion();	//Parent is reset, still sad from losing a baby.
+					}
+					else	PPSpace[i][j]->Stage = 0;	//We allow you to go through S again and finish replication.
 				}
 			}
 
