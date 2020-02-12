@@ -489,7 +489,7 @@ void Population::FollowSingleIndividual()
 			PP->Replicate(Environment, 8);
 			PP->time_replicated++;
 		}
-		else if(PP->Stage == 4)
+		else if(PP->Stage == 4 && uniform() < 0.1)
 		{
 			if (PP->time_replicated < replication_time)
 			{
