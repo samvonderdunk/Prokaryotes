@@ -776,7 +776,13 @@ void Population::SetEnvironment()
 
 void Population::GradientEnvironment(int i, int j)
 {
-	Environment = 10*(j/50);
+	if (j < 400)
+	{
+		Environment = 10*(j/50);
+	}
+	else if (j < 450)	Environment = 72;
+	else if (j < 500) Environment = 75;
+	else	Environment = 78;
 }
 
 int Population::NeighbourhoodDensity(int i, int j)
