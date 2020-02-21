@@ -287,7 +287,7 @@ void Genome::ReplicateGenomeStep(int env, int res)
 	repl_remaining_steps *= res;
 	repl_remaining_steps /= 8;
 
-	if (repl_remaining_steps == 0)	return;
+	if (repl_remaining_steps <= 0)	return;
 
 	start = BeadList->begin();
 	advance(start, pos_fork);	//Now it points to the the first bead to be replicated in this replication step.
