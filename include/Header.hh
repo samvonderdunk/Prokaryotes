@@ -32,7 +32,7 @@ using namespace std;
 #define toDigit(c) (c-'0')  // Converts char to digit
 
 //Constants for Gene.hh
-const int binding_length = 10;
+const int binding_length = 20;
 
 //Constants defined here, used in Population.hh
 //Currently gives a Segmentation fault if NR and NC are not equal!
@@ -71,8 +71,8 @@ const double house_duplication_mu = 0.0001;
 const double house_deletion_mu = 0.0001;
 const double house_shuffle_mu = 0.001;
 
-const int tfbs_selection_exponent = 10;
-const double empty_tf_claim_zero = 1.0;
+const double k_zero = 0.0000050;
+const double epsilon = 0.75;
 
 //constants for Population.cc
 const int TimeZero=0;
@@ -80,7 +80,7 @@ const int SimTime=1000000;
 const int TimeTerminalOutput = 1;  //Note that this is also the check for extinction, so let it check!
 const int TimeSaveGrid = 10000; //How many timesteps to save the whole grid as raw data.
 const int TimeSaveBackup = 10000;
-const int TimePruneFossils = 10000;
+const int TimePruneFossils = 1000;
 const int TimeOutputFossils = 10000;
 
 const double death_rate = 0.01;

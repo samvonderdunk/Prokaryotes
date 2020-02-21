@@ -1213,41 +1213,39 @@ Genome::iter Genome::MatchGeneToTFBS(iter i_tfbs)
 	TFBS* tfbs;
 	tfbs = dynamic_cast<TFBS*>(*i_tfbs);
 	double claim_value, final_claim;
-	double claim_sum = 0.0;
+	double claim_sum = 1.0;
 	iter i_gene;
+
 	//Calculate the claim sum.	//Maybe faster to iterate through the elements.
 	for(int g=0; (size_t)g<GeneStates->size(); g++)
 	{
-		claim_value = (int)tfbs->ClaimVector->at(g) - 48;
-		claim_sum += pow( ((double)(claim_value) / (double)(binding_length)), tfbs_selection_exponent) * (double) GeneStates->at(g);	//Claim of gene types is proportional to the number of active genes of that type and to their binding strength to the tfbs.
+		claim_value = (double) ( (int)tfbs->ClaimVector->at(g) - 48 );
+		claim_sum += (double) GeneStates->at(g) * k_zero * exp(claim_value * epsilon);	// numerator = 1 + sum_i(k*e^(eps*H_i))
+		//Claim of gene types is proportional to the number of active genes of that type and to their binding strength to the tfbs.
 	}
-	//Based on the cumulative claim, pick one of the genes.
-	i_gene = BeadList->begin();
-	if (claim_sum == 0.0)  return BeadList->end();	//There is no active TF that can bind the TFBS.
-  else
-	{
-		double total_claim = max(empty_tf_claim_zero,claim_sum);
-		double die_roll = uniform()*total_claim;
 
-		double empty_claim = max(0., empty_tf_claim_zero-claim_sum);	//Do this to quickly finish TFBS-TF matching in case no active TF managed to bind.
-		if(die_roll <= empty_claim)	return BeadList->end();	//No active TF managed to bind the TFBS.
-		else	die_roll -= empty_claim;
-		for(int g=0; (size_t)g<GeneStates->size(); g++)
+	//Based on the cumulative claim, pick one of the genes.
+	double die_roll = uniform();
+	if(die_roll <= 1.0 / claim_sum)	return BeadList->end();	//No active TF managed to bind the TFBS.
+	else	die_roll -= 1.0 / claim_sum;
+
+	i_gene = BeadList->begin();
+	for(int g=0; (size_t)g<GeneStates->size(); g++)
+	{
+		claim_value = (double) ( (int)tfbs->ClaimVector->at(g) - 48 );
+		final_claim = (double) GeneStates->at(g) * k_zero * exp(claim_value * epsilon);
+		if ( die_roll <= final_claim / claim_sum )
 		{
-			claim_value = (int)tfbs->ClaimVector->at(g) - 48;
-			final_claim = pow( ((double)(claim_value) / (double)(binding_length)), tfbs_selection_exponent) * (double)(GeneStates->at(g));
-			if ( die_roll <= final_claim )
+			//Increment i_gene until we find a gene of the correct type.
+			while(!(IsGene(*i_gene) && abs((*i_gene)->type)==GeneTypes->at(g)))
 			{
-				//Increment i_gene until we find a gene of the correct type.
-				while(!(IsGene(*i_gene) && abs((*i_gene)->type)==GeneTypes->at(g)))
-				{
-					i_gene++;
-				}
-				return i_gene;
+				i_gene++;
 			}
-			die_roll -= final_claim;
+			return i_gene;
 		}
+		die_roll -= final_claim / claim_sum;
 	}
+
 	printf("Error: claim out of bounds.\n");
 	exit(1);
 }
@@ -1282,10 +1280,10 @@ void Genome::GenomeToNetwork(double** Network)
 	vector<int> GeneActivity;
 	iter it;
 	gene_iter git;
-	int index, type, gene_act, gene_copynum, bead_count = 0, claim_value;
+	int index, type, gene_act, gene_copynum, bead_count = 0;
 	TFBS* tfbs;
 	TFBS::claim_iter cit;
-	double Effect;
+	double claim_value, Effect;
 	Gene* gene;
 
 	//Before we can interpret the ClaimVectors of all TFBS's we need to know if there are genes present in higher copy number.
@@ -1323,8 +1321,8 @@ void Genome::GenomeToNetwork(double** Network)
 				gene_act = GeneActivity.at(index);
 				gene_copynum = TypeCopyNumber.at(index);
 
-				claim_value = (int)(*cit) - 48;
-				Effect = pow( ((double)(claim_value) / (double)(binding_length)), tfbs_selection_exponent) * gene_copynum * gene_act * tfbs->activity;	//(*cit) is the raw claim, i.e. the bitstring match between TFBS and gene.
+				claim_value = (double) ( (int)(*cit) - 48 );
+				Effect = k_zero * exp(claim_value * epsilon) * gene_copynum * gene_act * tfbs->activity;	//(*cit) is the raw claim, i.e. the bitstring match between TFBS and gene.	NOTE: this might no longer make sense now that we are using binding energy to get the binding probability.
 
 				if(type <= 5)	NetRow[type] += Effect;
 				else if (Effect > 0)	NetRow[6] += Effect;
