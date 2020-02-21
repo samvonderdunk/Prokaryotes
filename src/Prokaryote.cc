@@ -128,6 +128,7 @@ void Prokaryote::PrintData(bool include_genome_data)
 void Prokaryote::UpdateCellCycle()	//Check whether changes in GeneStates make us go forward in the cell cycle.
 {
 	int s, match_next_state;
+	bool repl_in_progress = false;
 
 	for (s=0; s<5; s++)
 	{
@@ -137,6 +138,7 @@ void Prokaryote::UpdateCellCycle()	//Check whether changes in GeneStates make us
 			if (Stage == 4 || (Stage == 2 && (time_replicated < replication_time || G->pos_fork != G->pos_anti_ori)))	//Substitute for the above line to learn prokaryotes the trick of S-stage extension.
 			// if(Stage == 2 && (time_replicated < replication_time || G->pos_fork != G->pos_anti_ori))	//Prokaryotesv2.3: You don't stay in M-stage anymore, so the above lines are deprecated.
 			{
+				if(Stage == 2)	repl_in_progress = true;
 				Stage--;
 				s--;	//This means we will evaluate a Stage-4 cell for Stage 4 again.
 			}
@@ -146,6 +148,10 @@ void Prokaryote::UpdateCellCycle()	//Check whether changes in GeneStates make us
 			if (match_next_state==5)
 			{
 				Stage++;	//You have reached the next stage.
+			}
+			else if (repl_in_progress)	//We did not match S expression again, even though replication is still in progress.
+			{
+				Abortion();
 			}
 
 			else	//If you don't reach your normal next-state, we check whether you have reached the M-stage. Then you are updated to M-stage immediately. If you do not go there from Stage 3 (G2, as you should) we put your time_replicated to 0. Thus, reaching M-stage too soon will always kill you. You are not allowed to skip any of G1, S (multiple steps) and G2.

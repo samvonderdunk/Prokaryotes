@@ -716,6 +716,7 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 					//See what was in the neighbour square, whether we have to delete a cell or can just add one straight away.
 					if(PPSpace[nrow][ncol] != NULL)
 					{
+						continue;	//We are not going to play the competitive game, if your neighbour site is not empty, bad luck!
 						if (PPSpace[i][j]->time_stationary > PPSpace[nrow][ncol]->time_stationary)
 						{
 							DeathOfProkaryote(nrow, ncol);	//This cell is overgrown by PPSpace[i][j].

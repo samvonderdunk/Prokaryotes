@@ -71,8 +71,8 @@ const double house_duplication_mu = 0.0001;
 const double house_deletion_mu = 0.0001;
 const double house_shuffle_mu = 0.001;
 
-const double k_zero = 0.0000050;
-const double epsilon = 0.75;
+const double k_zero = 0.0000001;
+const double epsilon = 1.00;
 
 //constants for Population.cc
 const int TimeZero=0;
@@ -84,7 +84,7 @@ const int TimePruneFossils = 1000;
 const int TimeOutputFossils = 10000;
 
 const double death_rate = 0.005;
-const double m_fail_rate = 0.2;
+const double m_fail_rate = 1.0;
 const double repl_rate = 1.0;
 const int replication_neighbourhood = 3;  //i.e. a 3x3 grid represents the neighbourhood.
 const int generation_sample = 10000;
