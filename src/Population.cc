@@ -751,7 +751,11 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 					PPSpace[i][j]->Replicate(Environment,resource);
 					PPSpace[i][j]->time_replicated++;
 				}
-				else if(PPSpace[i][j]->Stage == 4)	PPSpace[i][j]->ready_for_division = true;
+				else if(PPSpace[i][j]->Stage == 4)
+				{
+					PPSpace[i][j]->ready_for_division = true;
+					if (PPSpace[i][j]->maturing_time == 0)	PPSpace[i][j]->maturing_time = Time - PPSpace[i][j]->time_of_appearance;
+				}
 				else	PPSpace[i][j]->ready_for_division = false;
 			}
 		}
@@ -950,7 +954,7 @@ void Population::PrintFieldToFile()
 		 	fprintf(f, "0\n");
 		}
 		else{		//Print relevant variables to make snapshots.
-			fprintf(f, "%d\t%d\t%d\t%d\n", PPSpace[i][j]->Stage, PPSpace[i][j]->G->g_length, PPSpace[i][j]->G->gnr_genes, PPSpace[i][j]->G->pos_anti_ori);
+			fprintf(f, "%d\t%d\t%d\t%d\t%d\n", PPSpace[i][j]->Stage, PPSpace[i][j]->G->g_length, PPSpace[i][j]->G->gnr_genes, PPSpace[i][j]->G->pos_anti_ori, PPSpace[i][j]->maturing_time);
 		}
 	}
 	fclose(f);

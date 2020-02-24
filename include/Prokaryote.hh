@@ -16,6 +16,7 @@ class Prokaryote{
 
 		//For output.
 		int nr_offspring;	//We can measure the length of our beasts' life cycles (i.e. Time - time_of_appearance for all individuals at the point of doing Mitosis with the same nr_offspring).
+		int maturing_time;	//Instead of measuring the time it takes for the cell to reproduce, we store the time it takes to reach M-stage for the first time.
 
 		//For the fossil record.
 		int time_of_appearance;

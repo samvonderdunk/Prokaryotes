@@ -95,6 +95,7 @@ void Prokaryote::EmptyProkaryote()
 	fitness_deficit = 0.;
 	saved_in_graveyard = false;
 	time_replicated = 0;
+	maturing_time = 0;
 }
 
 void Prokaryote::PrintData(bool include_genome_data)
