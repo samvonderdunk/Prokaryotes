@@ -69,6 +69,15 @@ void Prokaryote::Mitosis(Prokaryote* parent, int tot_prok_count)
 	}
 }
 
+void Prokaryote::Abortion()
+{
+	G->AbortChildGenome();
+
+	Stage = 0;
+	ready_for_division = false;
+	time_replicated = 0;
+}
+
 void Prokaryote::EmptyProkaryote()
 {
 	//Create the genome of the prokaryote

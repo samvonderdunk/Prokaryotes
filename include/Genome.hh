@@ -35,8 +35,9 @@ class Genome {
   void CopyPartOfGenomeToTemplate(iter begin, iter end, list<Bead*>* template_beadlist);
   void CloneGenome(const Genome* G_template);
 
-  void DevelopChildrenGenomes(Genome* G_replicated);
   void SplitGenome(Genome* G_replicated);
+  void AbortChildGenome();
+  void DevelopChildrenGenomes(Genome* G_replicated);
 
   void ReplicateGenomeStep(int env, int res);
   iter GeneMutate(iter ii, int* pdel_len);
