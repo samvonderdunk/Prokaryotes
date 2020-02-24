@@ -34,6 +34,7 @@ class Prokaryote{
 		void ClonePPFromPP(Prokaryote* PP_template, int tot_prok_count);
 		void Replicate(int env, int res);
 		void Mitosis(Prokaryote* parent, int tot_prok_count);
+		void Abortion();
 		void EmptyProkaryote();
 		void PrintData(bool include_genome_data);
 		void UpdateCellCycle();

@@ -81,6 +81,46 @@ void Genome::CloneGenome(const Genome* G_template)	//Used to copy genome of prok
 	pos_anti_ori = G_template->g_length;
 }
 
+
+void Genome::SplitGenome(Genome* G_replicated)	//Used to split a genome upon division
+{
+	//Find the fork with i_split.
+	iter i_split = G_replicated->BeadList->begin();
+	advance(i_split, G_replicated->pos_anti_ori);	//pos_anti_ori points to the end of the parental genome, which is now the first bead of the child genome.
+
+	BeadList=new list<Bead*>();
+	BeadList->splice(BeadList->begin(), *G_replicated->BeadList, i_split, G_replicated->BeadList->end());
+
+	DevelopChildrenGenomes(G_replicated);
+}
+
+void Genome::AbortChildGenome()
+{
+	iter it = BeadList->begin();
+	advance(it, pos_anti_ori);
+	while (it != BeadList->end())
+	{
+		if(IsGene(*it))
+		{
+			DecrementExpressionOfType(it);
+			gnr_genes--;
+		}
+		else if(IsHouse(*it))
+		{
+			gnr_houses--;
+		}
+		g_length--;
+		delete(*it);
+		it++;
+	}
+	it = BeadList->begin();
+	advance(it, pos_anti_ori);
+	it = BeadList->erase(it, BeadList->end());
+
+	SetClaimVectors();
+	pos_fork = 0;
+}
+
 void Genome::DevelopChildrenGenomes(Genome* G_replicated)	//Function gets iterators of parental genome, but copies it to child and then acts on variables of child genome.
 {
 	g_length = BeadList->size();
@@ -255,19 +295,6 @@ void Genome::DevelopChildrenGenomes(Genome* G_replicated)	//Function gets iterat
 	pos_anti_ori = g_length;
 
 }
-
-void Genome::SplitGenome(Genome* G_replicated)	//Used to split a genome upon division
-{
-	//Find the fork with i_split.
-	iter i_split = G_replicated->BeadList->begin();
-	advance(i_split, G_replicated->pos_anti_ori);	//pos_anti_ori points to the end of the parental genome, which is now the first bead of the child genome.
-
-	BeadList=new list<Bead*>();
-	BeadList->splice(BeadList->begin(), *G_replicated->BeadList, i_split, G_replicated->BeadList->end());
-
-	DevelopChildrenGenomes(G_replicated);
-}
-
 
 void Genome::ReplicateGenomeStep(int env, int res)
 {
