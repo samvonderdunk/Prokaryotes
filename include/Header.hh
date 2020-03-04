@@ -76,8 +76,8 @@ const double epsilon = 0.75;
 
 //constants for Population.cc
 const int TimeZero=0;
-const int SimTime=1000000;
-const int TimeTerminalOutput = 1;  //Note that this is also the check for extinction, so let it check!
+const int default_SimTime=100000;
+const int TimeTerminalOutput = 100;  //Note that this is also the check for extinction, so let it check!
 const int TimeSaveGrid = 10000; //How many timesteps to save the whole grid as raw data.
 const int TimeSaveBackup = 10000;
 const int TimePruneFossils = 1000;
@@ -115,6 +115,7 @@ extern string backup_reboot;
 extern string anctrace_reboot;
 extern bool mutations_on;
 extern int init_env;
+extern int SimTime;
 
 const string genome_file="";
 const string genestate_file="";
