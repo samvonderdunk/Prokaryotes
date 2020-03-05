@@ -115,12 +115,12 @@ void Population::ReadBackupFile()
 	int count_lines = 0;
 	while(getline(infile,line))
 	{
-		if (count_lines/NC >= NR || count_lines%NR >= NC)
+		if (count_lines/NC >= NR || count_lines%NC >= NC)
 		{
 			printf("Backup file was larger than the field; aborting just to be safe.\n");
 			exit(1);
 		}
-		if(line == "0")	PPSpace[count_lines/NC][count_lines%NR] = NULL;
+		if(line == "0")	PPSpace[count_lines/NC][count_lines%NC] = NULL;
 		else
 		{
 			//Start new individual.
@@ -231,13 +231,13 @@ void Population::ReadBackupFile()
 
 			PP->G->SetClaimVectors();
 
-			PPSpace[count_lines/NC][count_lines%NR] = PP;
+			PPSpace[count_lines/NC][count_lines%NC] = PP;
 			if (PP->mutant)	Fossils->BuryFossil(PP);
 		}
 		if(count_lines<generation_sample)
 		{
-			if(PPSpace[count_lines/NC][count_lines%NR] != NULL)	PPSpace[count_lines/NC][count_lines%NR]->saved_in_graveyard = true;
-			OldGeneration[count_lines] = PPSpace[count_lines/NC][count_lines%NR];	//Put a subset of prokaryote pointers in the OldGeneration array.
+			if(PPSpace[count_lines/NC][count_lines%NC] != NULL)	PPSpace[count_lines/NC][count_lines%NC]->saved_in_graveyard = true;
+			OldGeneration[count_lines] = PPSpace[count_lines/NC][count_lines%NC];	//Put a subset of prokaryote pointers in the OldGeneration array.
 		}
 		count_lines++;
 	}
@@ -246,6 +246,7 @@ void Population::ReadBackupFile()
 		printf("Backup file was too small for the field; aborting just to be safe.\n");
 		exit(1);
 	}
+	OutputBackup();
 }
 
 void Population::ReadAncestorFile()
@@ -269,7 +270,8 @@ void Population::ReadAncestorFile()
 	int count_fossils = 0;
 	while(getline(infile,line))
 	{
-		count_lines++;
+		// count_lines++;
+		// cout << count_lines << endl;
 		end_data = line.find("\t");
 		data = line.substr(0,end_data);
 		stringstream(data) >> ID;
