@@ -489,12 +489,12 @@ void Population::FollowSingleIndividual()
 			PP->Replicate(Environment, 8);
 			PP->time_replicated++;
 		}
-		else if(PP->Stage == 4 && uniform() < 0.1)
+		else if(PP->Stage == 4)
 		{
-			if (PP->time_replicated < replication_time)
+			if (PP->time_replicated < replication_time || PP->G->pos_fork != PP->G->pos_anti_ori || uniform() >= 1.0)
 			{
 				//If you would normally die because you reach M to fast, you here print that you went to Stage -1 (dead) so that we can plot this.
-				cout << "T " << Time << "\tE " << Environment << "\tStage: -1\tG_len: " << PP->G->g_length << "\tExpr: " << PP->G->PrintGeneStateContent(true) << endl;
+				// cout << "T " << Time << "\tE " << Environment << "\tStage: -1\tG_len: " << PP->G->g_length << "\tExpr: " << PP->G->PrintGeneStateContent(true) << endl;
 				PP->Abortion();
 			}
 			else
