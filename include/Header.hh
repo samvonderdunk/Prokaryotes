@@ -50,37 +50,37 @@ const int replication_time = 1;
 const int nr_household_genes = 50;
 
 // Mutations
-const double gene_threshold_mu = 0.001;
-const double gene_activity_mu = 0.001;
-const double gene_binding_domain_mu = 0.001;
+const double gene_threshold_mu = 0.0005;
+const double gene_activity_mu = 0.0005;
+const double gene_binding_domain_mu = 0.0001;
 
-const double tfbs_binding_site_mu = 0.001;
-const double tfbs_activity_mu = 0.001;
+const double tfbs_binding_site_mu = 0.0001;
+const double tfbs_activity_mu = 0.0005;
 
-const double gene_duplication_mu = 0.001;
-const double gene_innovation_mu = 0.001; //I set this 10x lower than other mutation rates on purpose.
-const double gene_deletion_mu = 0.001;
+const double gene_duplication_mu = 0.0005;
+const double gene_innovation_mu = 0.0005; //I set this 10x lower than other mutation rates on purpose.
+const double gene_deletion_mu = 0.0005;
 const double gene_shuffle_mu = 0.001;
 
-const double tfbs_duplication_mu = 0.001;
-const double tfbs_innovation_mu = 0.01;
-const double tfbs_deletion_mu = 0.001;
+const double tfbs_duplication_mu = 0.0005;
+const double tfbs_innovation_mu = 0.005;
+const double tfbs_deletion_mu = 0.0005;
 const double tfbs_shuffle_mu = 0.001;
 
 const double house_duplication_mu = 0.0001;
 const double house_deletion_mu = 0.0001;
 const double house_shuffle_mu = 0.001;
 
-const double k_zero = 0.0000050;
-const double epsilon = 0.75;
+const double k_zero = 0.0000001;
+const double epsilon = 1.00;
 
 //constants for Population.cc
 const int TimeZero=0;
-const int default_SimTime=100000;
+const int default_SimTime=1000000;
 const int TimeTerminalOutput = 100;  //Note that this is also the check for extinction, so let it check!
-const int TimeSaveGrid = 10000; //How many timesteps to save the whole grid as raw data.
+const int TimeSaveGrid = 100; //How many timesteps to save the whole grid as raw data.
 const int TimeSaveBackup = 10000;
-const int TimePruneFossils = 1000;
+const int TimePruneFossils = 100;
 const int TimeOutputFossils = 10000;
 
 const double death_rate = 0.001;
