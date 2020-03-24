@@ -62,16 +62,19 @@ void Population::InitialisePopulation()
 	cout << "Initial genome = " << PP->G->PrintContent(NULL, true, false) << endl;	//Pass true as argument to print the nicely colored format for the terminal output.
 	//Now fill the field with this prokaryote (I guess this is less intensive then creating new randomized prokaryotes for the whole grid).
 	for(int row=0; row<NR; row++) for(int col=0; col<NC; col++){
-		p_id_count_++;	//Make sure the first individual gets p_id_count_ of 1.
-		PP_Copy=new Prokaryote();
-		PP_Copy->ClonePPFromPP(PP, p_id_count_);
-		PP_Copy->Ancestor = NULL;	//Null-pointer tells me the cell was initialised.
-		PPSpace[row][col] = PP_Copy;
-		Fossils->BuryFossil(PPSpace[row][col]);
-		if(p_id_count_<=generation_sample)
+		if(uniform() < 0.1)
 		{
-			OldGeneration[p_id_count_-1] = PPSpace[row][col];	//Put a subset of prokaryote pointers in the OldGeneration array.
-			PPSpace[row][col]->saved_in_graveyard = true;
+			p_id_count_++;	//Make sure the first individual gets p_id_count_ of 1.
+			PP_Copy=new Prokaryote();
+			PP_Copy->ClonePPFromPP(PP, p_id_count_);
+			PP_Copy->Ancestor = NULL;	//Null-pointer tells me the cell was initialised.
+			PPSpace[row][col] = PP_Copy;
+			Fossils->BuryFossil(PPSpace[row][col]);
+			if(p_id_count_<=generation_sample)
+			{
+				OldGeneration[p_id_count_-1] = PPSpace[row][col];	//Put a subset of prokaryote pointers in the OldGeneration array.
+				PPSpace[row][col]->saved_in_graveyard = true;
+			}
 		}
 	}
 

@@ -1161,6 +1161,7 @@ void Genome::UpdateGeneStates()
 
 	for(int g=0; (size_t)g<GeneStates->size(); g++)	NextStateExpression->at(g) = 0;	//Make sure vector is empty (i.e. all zeroes).
 	int sumeffects=0;
+	int it_cntr=0;	//Used to know when we pass the end of the genome (where we reset sumeffects).
 	iter it = BeadList->begin();
 	while (it != BeadList->end())
 	{
@@ -1190,6 +1191,8 @@ void Genome::UpdateGeneStates()
 			}
 		}
 		it++;
+		it_cntr++;
+		if(it_cntr == pos_anti_ori)	sumeffects = 0;	//Reset when we finish the 'parental' genome.
 	}
 
 	//Now set the NextStateExpression into the GeneStates vector.

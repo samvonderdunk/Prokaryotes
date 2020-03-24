@@ -36,7 +36,7 @@ const int binding_length = 20;
 
 //Constants defined here, used in Population.hh
 //Currently gives a Segmentation fault if NR and NC are not equal!
-const int NR=100;  //While there is no diffusion, there seems to be no reason to make the field too big.
+const int NR=50;  //While there is no diffusion, there seems to be no reason to make the field too big.
 const int NC=550;
 
 //Constants defined here, used in Genome.cc
