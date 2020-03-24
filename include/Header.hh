@@ -36,7 +36,7 @@ const int binding_length = 20;
 
 //Constants defined here, used in Population.hh
 //Currently gives a Segmentation fault if NR and NC are not equal!
-const int NR=100;  //While there is no diffusion, there seems to be no reason to make the field too big.
+const int NR=50;  //While there is no diffusion, there seems to be no reason to make the field too big.
 const int NC=550;
 
 //Constants defined here, used in Genome.cc
@@ -54,8 +54,8 @@ const double gene_threshold_mu = 0.0005;
 const double gene_activity_mu = 0.0005;
 const double gene_binding_domain_mu = 0.0001;
 
-const double tfbs_binding_site_mu = 0.0001;
-const double tfbs_activity_mu = 0.0005;
+const double tfbs_binding_site_mu = 0.0005;
+const double tfbs_activity_mu = 0.0001;
 
 const double gene_duplication_mu = 0.0005;
 const double gene_innovation_mu = 0.0005; //I set this 10x lower than other mutation rates on purpose.
@@ -71,8 +71,8 @@ const double house_duplication_mu = 0.0001;
 const double house_deletion_mu = 0.0001;
 const double house_shuffle_mu = 0.001;
 
-const double k_zero = 0.0000050;
-const double epsilon = 0.75;
+const double k_zero = 0.0000001;
+const double epsilon = 1.00;
 
 //constants for Population.cc
 const int TimeZero=0;
