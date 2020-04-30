@@ -43,7 +43,7 @@ const int NC=550;
 const int init_nr_gene_types = 10;
 const int init_nr_tfbs_per_gene = 3;
 const int WeightRange = 3;  //TFBS weights can range from -WeightRange to +WeightRange.
-const int repl_step_size = 80;
+const float repl_step_size = 80.;	//Effective rcs can be below 1, turning into a probability of replicating a single bead.
 const bool replicate_entire_genes = false;
 const bool repl_step_noise = false;
 const int replication_time = 1;
@@ -114,7 +114,7 @@ extern string genestate_init;
 extern string backup_reboot;
 extern string anctrace_reboot;
 extern bool mutations_on;
-extern int init_env;
+extern double init_env;
 extern int SimTime;
 
 const string genome_file="";
