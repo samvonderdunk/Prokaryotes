@@ -21,7 +21,7 @@ string genestate_init = genestate_file;
 string backup_reboot = backup_file;
 string anctrace_reboot = anctrace_file;
 bool mutations_on = true;
-int init_env = 0;
+double init_env = 0.;
 int SimTime = default_SimTime;
 
 void Setup(int argc, char** argv);
@@ -213,8 +213,8 @@ void Setup(int argc, char** argv) {
 
 		else if(ReadOut=="-e" && (i+1)!=argc)
 		{
-			init_env = atoi(argv[i+1]);
-			printf("Environment input: %d\n", init_env);
+			init_env = atof(argv[i+1]);
+			printf("Environment input: %f\n", init_env);
 			i++;
 			continue;
 		}

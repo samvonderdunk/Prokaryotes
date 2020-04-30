@@ -296,25 +296,39 @@ void Genome::DevelopChildrenGenomes(Genome* G_replicated)	//Function gets iterat
 
 }
 
-void Genome::ReplicateGenomeStep(int env, int res)
+void Genome::ReplicateGenomeStep(double env, int res)
 {
 	iter it, start, end, it_new;
 	Bead* bead;
 	int gene_length = 0;
-	int repl_remaining_steps = repl_step_size;
 
-	repl_remaining_steps -= env;	//Subtract a number of steps defined by the current environment.
+	double d_repl_remaining_steps = repl_step_size;
+	int repl_remaining_steps;
+
+	d_repl_remaining_steps -= env;	//Subtract a number of steps defined by the current environment.
 
 	if (repl_step_noise)
 	{
-		int repl_noise = ( (int)(uniform()*2) == 1 ) ? repl_remaining_steps:-repl_remaining_steps;
-		repl_remaining_steps = ( (int)(uniform()*2) == 1 ) ? repl_remaining_steps:repl_remaining_steps+repl_noise;
+		int repl_noise = ( (int)(uniform()*2) == 1 ) ? d_repl_remaining_steps:-d_repl_remaining_steps;
+		d_repl_remaining_steps = ( (int)(uniform()*2) == 1 ) ? d_repl_remaining_steps:d_repl_remaining_steps+repl_noise;
 	}
 
-	repl_remaining_steps *= res;
-	repl_remaining_steps /= 8;
+	d_repl_remaining_steps *= res;
+	d_repl_remaining_steps /= 8;
 
-	if (repl_remaining_steps <= 0)	return;
+	if (d_repl_remaining_steps >= 1.)
+	{
+		repl_remaining_steps = (int) d_repl_remaining_steps;	//Round down to integer number of beads.
+	}
+	else if (d_repl_remaining_steps <= 0.)
+	{
+		return;	//Zero replication, no use drawing random number.
+	}
+	else	//Regard fractional replication steps in the range [0.0,1.0] as probability.
+	{
+		if (uniform() < d_repl_remaining_steps)	repl_remaining_steps = 1;
+		else return;
+	}
 
 	start = BeadList->begin();
 	advance(start, pos_fork);	//Now it points to the the first bead to be replicated in this replication step.
