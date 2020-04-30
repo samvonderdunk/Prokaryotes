@@ -791,7 +791,7 @@ void Population::SetEnvironment()
 {
 	if(uniform() < environmental_change_rate)	//Change environment.
 	{
-		Environment = (int)(uniform()*(2*environmental_variation+1) - environmental_variation);
+		Environment = (double)((int)(uniform()*(2*environmental_variation+1) - environmental_variation));
 	}
 }
 
@@ -801,9 +801,9 @@ void Population::GradientEnvironment(int i, int j)
 	{
 		Environment = 10*(j/50);
 	}
-	else if (j < 450)	Environment = 72;
-	else if (j < 500) Environment = 75;
-	else	Environment = 78;
+	else if (j < 450)	Environment = 72.;
+	else if (j < 500) Environment = 75.;
+	else	Environment = 78.;
 }
 
 int Population::NeighbourhoodDensity(int i, int j)

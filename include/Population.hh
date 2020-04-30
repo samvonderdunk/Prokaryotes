@@ -32,7 +32,7 @@ class Population
 		//These are for looking at the occurrence of evolution.
 		Prokaryote* OldGeneration[generation_sample];
 
-		int Environment;	//Add noise for a given period of time.
+		double Environment;	//Add noise for a given period of time.
 
 		Population();
 		~Population();

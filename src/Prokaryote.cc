@@ -32,7 +32,7 @@ void Prokaryote::ClonePPFromPP(Prokaryote* PP_template, int tot_prok_count)
 	mutant = PP_template->mutant;	//If you clone a mutant (or the first prokaryote), its clone will also count as a mutant.
 }
 
-void Prokaryote::Replicate(int env, int res)
+void Prokaryote::Replicate(double env, int res)
 {
 	if (G->pos_fork != G->pos_anti_ori)	//If the fork is has reached the opposite of ORI of the genome, there is nothing to replicate.
 	{
