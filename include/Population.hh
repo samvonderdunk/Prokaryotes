@@ -50,6 +50,7 @@ class Population
 		void ExploreAttractorLandscape();
 
 		void UpdatePopulation();
+		void MargolusDiffusion();
 		bool IsReadyToDivide(int i, int j, int nrow, int ncol);
 		void DeathOfProkaryote(int i, int j);
 

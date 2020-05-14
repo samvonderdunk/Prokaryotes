@@ -652,6 +652,7 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 	int update_order[NR*NC];
 	int u, i, j;
 	double chance, resource;
+	double diffusion_steps;
 
 	if(Time==TimeZero)	ResetProgressCounters();	//Initialise some of my output stats for the first time.
 
@@ -727,8 +728,54 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 	}
 
 	//Margolus diffusion.
+	diffusion_steps = diffusion_rate;
+	while (diffusion_steps > 0.)
+	{
+		if (diffusion_steps >= 1.)
+		{
+			MargolusDiffusion();
+			diffusion_steps -= 1.;
+		}
+		else
+		{
+			if (uniform() < diffusion_steps)	MargolusDiffusion();
+			diffusion_steps = -1.;	//Make sure that it is not slightly above zero (?)
+		}
+	}
 
 }
+
+void Population::MargolusDiffusion()	//Based on Brem's function from Evolvabear_V9.0
+{
+	int kernel, i, j;
+	Prokaryote* PPtemp;
+
+	//Rotation of 2x2 squares divided up according to two different kernels (shift by one), and both run the entire field.
+	//kernel=0 does not need to deal with wrapped boundaries if NR and NC are even, but kernel=1 does.
+	for (kernel=0; kernel<2; kernel++)
+	{
+		for(i=kernel; i<NROW-1+kernel; i+=2)	for(j=kernel; j<NCOL-1+kernel; j+=2)
+		{
+			if (uniform()<0.5)	//Counter-clockwise.
+			{
+				PPtemp = PPSpace[(i+1)%NR][j%NC];	//The %NR and %NC make sure that the grid is wrapped (e.g. the boundary row index "100" will return 100%100 = 0 if NR=100).
+				PPSpace[(i+1)%NR][j%NC] = PPSpace[i%NR][j%NC];
+				PPSpace[i%NR][j%NC] = PPSpace[i%NR][(j+1)%NC];
+				PPSpace[i%NR][(j+1)%NC] = PPSpace[(i+1)%NR][(j+1)%NC];
+				PPSpace[(i+1)%NR][(j+1)%NC] = PPtemp;
+			}
+			else								//Clockwise.
+			{
+				PPtemp = PPSpace[i%NR][(j+1)%NC];
+				PPSpace[i%NR][(j+1)%NC] = PPSpace[i%NR][j%NC];
+				PPSpace[i%NR][j%NC] = PPSpace[(i+1)%NR][j%NC];
+				PPSpace[(i+1)%NR][j%NC] = PPSpace[(i+1)%NR][(j+1)%NC];
+				PPSpace[(i+1)%NR][(j+1)%NC] = PPtemp;
+			}
+		}
+	}
+}
+
 
 bool Population::IsReadyToDivide(int i, int j, int nrow, int ncol)	//Figure out if cell meets division criteria for current division protocol (see Header.hh).
 {
