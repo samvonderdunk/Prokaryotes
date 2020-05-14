@@ -48,13 +48,20 @@ class Population
 		bool CompareExpressionProgression(Prokaryote* PP1, Prokaryote* PP2, int time_window);
 		void FollowSingleIndividual();
 		void ExploreAttractorLandscape();
+
 		void UpdatePopulation();
+		bool IsReadyToDivide(int i, int j, int nrow, int ncol);
 		void DeathOfProkaryote(int i, int j);
+
 		void SetEnvironment();
 		void GradientEnvironment(int i, int j);
+		double CollectResource(int i, int j, double Environment);
+		coords PickNeighbour(int i, int j);
 		int NeighbourhoodDensity(int i, int j);
+		void ResetProgressCounters();
 
 		void PruneFossilRecord();
+
 		double MatrixDistance(Prokaryote* PP1, Prokaryote* PP2);
 		bool QualitativeNetworkChange(Prokaryote* PP1, Prokaryote* PP2);
 		void PrintFieldToFile();

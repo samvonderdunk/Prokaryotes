@@ -39,7 +39,7 @@ class Genome {
   void AbortChildGenome();
   void DevelopChildrenGenomes(Genome* G_replicated);
 
-  void ReplicateGenomeStep(double env, int res);
+  void ReplicateGenomeStep(double resource);
   iter GeneMutate(iter ii, int* pdel_len);
   iter TFBSMutate(iter ii, int* pdel_len);
   iter HouseMutate(iter ii, int* pdel_len);

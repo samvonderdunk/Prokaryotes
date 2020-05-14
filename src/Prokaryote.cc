@@ -14,6 +14,28 @@ Prokaryote::~Prokaryote() {
 	}
 }
 
+void Prokaryote::EmptyProkaryote()
+{
+	//Create the genome of the prokaryote
+	G = NULL;
+	G = new Genome();
+	//Starts at first stage again
+	Stage = 0;
+	ready_for_division = false;
+	nr_offspring = 0;
+	fossil_id = 0;
+	time_of_appearance = 0;
+	Ancestor = NULL;
+	mutant = false;
+	alive = true;
+	fitness_deficit = 0.;
+	saved_in_graveyard = false;
+	time_replicated = 0;
+	time_stationary = 0;
+	priviliges = true;
+	maturing_time = 0;
+}
+
 void Prokaryote::InitialiseProkaryote(){
 	EmptyProkaryote();
 	mutant = true;	//The first will be deemed a mutant so that the ancestor trace always comes back to at least one individual of the initial batch.
@@ -67,61 +89,6 @@ void Prokaryote::Mitosis(Prokaryote* parent, int tot_prok_count)
 	}
 }
 
-void Prokaryote::Abortion()
-{
-	G->AbortChildGenome();
-
-	Stage = 0;
-	ready_for_division = false;
-	time_replicated = 0;
-	time_stationary = 0;
-}
-
-void Prokaryote::EmptyProkaryote()
-{
-	//Create the genome of the prokaryote
-	G = NULL;
-	G = new Genome();
-	//Starts at first stage again
-	Stage = 0;
-	ready_for_division = false;
-	nr_offspring = 0;
-	fossil_id = 0;
-	time_of_appearance = 0;
-	Ancestor = NULL;
-	mutant = false;
-	alive = true;
-	fitness_deficit = 0.;
-	saved_in_graveyard = false;
-	time_replicated = 0;
-	time_stationary = 0;
-	priviliges = true;
-	maturing_time = 0;
-}
-
-void Prokaryote::PrintData(bool include_genome_data)
-{
-	printf("##############################################\n");
-	printf("Prokaryote #%llu:\n", fossil_id);
-	if(Ancestor==NULL)	printf("Generation 0\n");
-	else	printf("Child of #%llu\n", Ancestor->fossil_id);
-	printf("Stage = %d\n", Stage);
-	printf("Time of birth = %d\n", time_of_appearance);
-	printf("Fitness deficit = %f\n", fitness_deficit);
-	printf("It is %s.\n", (alive)? "alive":"dead");
-	printf("It is %sready for division.\n", (ready_for_division)? "":"not ");
-	printf("It is %sa mutant.\n", ((mutant)? "":"not " ));
-	printf("It will %sbe saved in the graveyard.\n", ((saved_in_graveyard)? "":"not "));
-	printf("----------------------------------------------\n");
-	if(include_genome_data)
-	{
-		printf("Genome:\n%s\n", G->PrintContent(NULL, true, false).c_str());
-		printf("GeneStates:\n%s\n", G->PrintGeneStateContent(false).c_str());
-		printf("GeneTypes:\n%s\n", G->PrintGeneTypeContent().c_str());
-	}
-	printf("##############################################\n");
-}
-
 void Prokaryote::UpdateCellCycle()	//Check whether changes in GeneStates make us go forward in the cell cycle.
 {
 	int evaluate_stage = Stage;	//Note that Stage includes "D", so "S" corresponds to Stage 2 but to EvaluateStage 1.
@@ -153,4 +120,37 @@ void Prokaryote::UpdatePenalty(int protocol)
 	else if (protocol == 1)		Abortion();
 	else if (protocol == 2)		Stage = 5;	//Sentenced to wait until mitosis and then die (it won't update anymore).
 	else if (protocol == 3)		Stage = 6;	//Sentenced to death immediately (see Population.cc).
+}
+
+void Prokaryote::Abortion()
+{
+	G->AbortChildGenome();
+
+	Stage = 0;
+	ready_for_division = false;
+	time_replicated = 0;
+	time_stationary = 0;
+}
+
+void Prokaryote::PrintData(bool include_genome_data)
+{
+	printf("##############################################\n");
+	printf("Prokaryote #%llu:\n", fossil_id);
+	if(Ancestor==NULL)	printf("Generation 0\n");
+	else	printf("Child of #%llu\n", Ancestor->fossil_id);
+	printf("Stage = %d\n", Stage);
+	printf("Time of birth = %d\n", time_of_appearance);
+	printf("Fitness deficit = %f\n", fitness_deficit);
+	printf("It is %s.\n", (alive)? "alive":"dead");
+	printf("It is %sready for division.\n", (ready_for_division)? "":"not ");
+	printf("It is %sa mutant.\n", ((mutant)? "":"not " ));
+	printf("It will %sbe saved in the graveyard.\n", ((saved_in_graveyard)? "":"not "));
+	printf("----------------------------------------------\n");
+	if(include_genome_data)
+	{
+		printf("Genome:\n%s\n", G->PrintContent(NULL, true, false).c_str());
+		printf("GeneStates:\n%s\n", G->PrintGeneStateContent(false).c_str());
+		printf("GeneTypes:\n%s\n", G->PrintGeneTypeContent().c_str());
+	}
+	printf("##############################################\n");
 }

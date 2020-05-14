@@ -653,82 +653,9 @@ void Population::ExploreAttractorLandscape()
 	PP = NULL;
 }
 
-Population::coords Population::PickNeighbour(int i, int j)	//Pick random neighbour.
-{
-	int nrow = i, ncol = j, ni, nj, random_neighbour;
-
-	while (nrow == i && ncol == j)	//Try again if you pick yourself.
-	{
-		random_neighbour = (int)(uniform()*9);
-		ni = random_neighbour/replication_neighbourhood;
-		nj = random_neighbour%replication_neighbourhood;
-
-		//Wrap grid boundaries
-		nrow = i+ni-1;
-		if(nrow < 0)	nrow += NR;
-		else if(nrow >= NR)	nrow -= NR;
-
-		ncol = j+nj-1;
-		if(ncol < 0)	ncol += NC;
-		else if(ncol >= NC)	ncol -= NC;
-	}
-	return std::make_pair(nrow, ncol);
-}
-
-bool Population::IsReadyToDivide(int i, int j, int nrow, int ncol)	//Figure out if cell meets division criteria for current division protocol (see Header.hh).
-{
-		//Division is attempted in Stage 4 or higher (where 5 marks for death), and with probability determined by repl_rate corrected for fitness_deficit.
-		//Note that the below statement is negative, so it uses "OR" constructions.
-	if (PPSpace[i][j]->Stage < 4 || priviliges == false || uniform() > (repl_rate - PPSpace[i][j]->fitness_deficit))	return false;
-	else	//Options are sorted from most to least aggressive.
-	{
-		if (DivisionProtocol == 0)	//Overgrow neighbour.
-		{
-			return true;
-		}
-		else if (DivisionProtocol == 1)	//Compete with neighbour.
-		{
-			if (PPSpace[nrow][ncol] == NULL) return true;
-			else if (PPSpace[i][j]->time_stationary > PPSpace[nrow][ncol]->time_stationary)	return true;	//Competition rule.
-			else	return false;
-		}
-		else if (DivisionProtocol == 2)	//Wait for empty site.
-		{
-			if (PPSpace[nrow][ncol] == NULL)	return true;
-			else	return false;
-		}
-	}
-}
-
-void Population::ResetProgressCounters()
-{
-	nr_birth_events = 0;
-	nr_first_births = 0;
-	cum_time_alive = 0;	//Store the total time that prokaryotes undergoing mitosis are alive (used to extract the average length of their life cycle).
-	cum_fit_def = 0.0;
-}
-
-double Population::CollectResource(int i, int j, double Environment)
-{
-	double resource, repl_noise;
-	int neigh_count;
-
-	resource = repl_step_size - Environment;
-
-	if (repl_step_noise)
-	{
-		repl_noise = ( (int)(uniform()*2) == 1 ) ? resource:-resource;
-		resource = ( (int)(uniform()*2) == 1 ) ? resource:resource+repl_noise;
-	}
-
-	if (resource_dependent_replication)
-	{
-		resource *= 8 - NeighbourhoodDensity(i, j);
-		resource /= 8;
-	}
-
-	return resource;
-}
+/* ######################################################################## */
+/*				UPDATE	UPDATE	UPDATE	UPDATE	UPDATE	UPDATE	UPDATE						*/
+/* ######################################################################## */
 
 void Population::UpdatePopulation()	//This is the main next-state function.
 {
@@ -806,6 +733,31 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 
 }
 
+bool Population::IsReadyToDivide(int i, int j, int nrow, int ncol)	//Figure out if cell meets division criteria for current division protocol (see Header.hh).
+{
+		//Division is attempted in Stage 4 or higher (where 5 marks for death), and with probability determined by repl_rate corrected for fitness_deficit.
+		//Note that the below statement is negative, so it uses "OR" constructions.
+	if (PPSpace[i][j]->Stage < 4 || priviliges == false || uniform() > (repl_rate - PPSpace[i][j]->fitness_deficit))	return false;
+	else	//Options are sorted from most to least aggressive.
+	{
+		if (DivisionProtocol == 0)	//Overgrow neighbour.
+		{
+			return true;
+		}
+		else if (DivisionProtocol == 1)	//Compete with neighbour.
+		{
+			if (PPSpace[nrow][ncol] == NULL) return true;
+			else if (PPSpace[i][j]->time_stationary > PPSpace[nrow][ncol]->time_stationary)	return true;	//Competition rule.
+			else	return false;
+		}
+		else if (DivisionProtocol == 2)	//Wait for empty site.
+		{
+			if (PPSpace[nrow][ncol] == NULL)	return true;
+			else	return false;
+		}
+	}
+}
+
 void Population::DeathOfProkaryote(int i, int j)
 {
 	if(!PPSpace[i][j]->mutant && !PPSpace[i][j]->saved_in_graveyard)	delete PPSpace[i][j];
@@ -832,6 +784,50 @@ void Population::GradientEnvironment(int i, int j)
 	else	Environment = 78.;
 }
 
+double Population::CollectResource(int i, int j, double Environment)
+{
+	double resource, repl_noise;
+	int neigh_count;
+
+	resource = repl_step_size - Environment;
+
+	if (repl_step_noise)
+	{
+		repl_noise = ( (int)(uniform()*2) == 1 ) ? resource:-resource;
+		resource = ( (int)(uniform()*2) == 1 ) ? resource:resource+repl_noise;
+	}
+
+	if (resource_dependent_replication)
+	{
+		resource *= 8 - NeighbourhoodDensity(i, j);
+		resource /= 8;
+	}
+
+	return resource;
+}
+
+Population::coords Population::PickNeighbour(int i, int j)	//Pick random neighbour.
+{
+	int nrow = i, ncol = j, ni, nj, random_neighbour;
+
+	while (nrow == i && ncol == j)	//Try again if you pick yourself.
+	{
+		random_neighbour = (int)(uniform()*9);
+		ni = random_neighbour/replication_neighbourhood;
+		nj = random_neighbour%replication_neighbourhood;
+
+		//Wrap grid boundaries
+		nrow = i+ni-1;
+		if(nrow < 0)	nrow += NR;
+		else if(nrow >= NR)	nrow -= NR;
+
+		ncol = j+nj-1;
+		if(ncol < 0)	ncol += NC;
+		else if(ncol >= NC)	ncol -= NC;
+	}
+	return std::make_pair(nrow, ncol);
+}
+
 int Population::NeighbourhoodDensity(int i, int j)
 {
 	int ii, jj, nrow, ncol, density=0;
@@ -852,6 +848,18 @@ int Population::NeighbourhoodDensity(int i, int j)
 
 	return density;
 }
+
+void Population::ResetProgressCounters()
+{
+	nr_birth_events = 0;
+	nr_first_births = 0;
+	cum_time_alive = 0;	//Store the total time that prokaryotes undergoing mitosis are alive (used to extract the average length of their life cycle).
+	cum_fit_def = 0.0;
+}
+
+/* ######################################################################## */
+/*				FOSSILS	FOSSILS	FOSSILS	FOSSILS	FOSSILS	FOSSILS	FOSSILS						*/
+/* ######################################################################## */
 
 void Population::PruneFossilRecord()
 {
