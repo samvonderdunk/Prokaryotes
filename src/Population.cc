@@ -673,37 +673,30 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 
 	if(environmental_noise) SetEnvironment();	//Potential change of environment.
 
-	//cout << "Env set" << endl;
 	ResetProgressCounters();
 
 	for(u=0; u<NR*NC; u++) update_order[u]=u;
 	random_shuffle(&update_order[0], &update_order[NR*NC]);		//Is also set by initial_seed through srand(initial_seed); see World.cc
 
-	//cout << "Order updated" << endl;
 	for(u=0; u<NR*NC; u++)		//Go through the field: birth, death (and later possibly diffusion).
 	{
 		i = update_order[u]/NC;	//Row index.
 		j = update_order[u]%NC;	//Column index.
 		chance = uniform();
 
-		//cout << i << "\t" << j << endl;
 		if (environmental_gradient)	GradientEnvironment(i, j);	//Replication chunk size gradient over the field.
 
 		if (PPSpace[i][j] != NULL)	//Alive site.	Programme is written such that nothing happens at empty sites.
 		{
-			//cout << "Alive" << endl;
 			if (chance < death_rate)
 			{
 				DeathOfProkaryote(i, j);
-				continue;
+				continue;	//A death event ends the dynamics for this site at this point in time.
 			}
 
 			//Pick random neighbour (needed in some protocols to determine if cell is allowed to replicate).
 			coords neigh = PickNeighbour(i, j);
 
-			//cout << "Neigh picked" << endl;
-			//cout << neigh.first << "\t" << neigh.second << endl;
-			//cout << PPSpace[neigh.first][neigh.second] << endl;
 			if (IsReadyToDivide(i, j, neigh.first, neigh.second) == true)	//Will the cell attempt division?
 			{
 				if (PPSpace[i][j]->Stage == 5)
@@ -711,38 +704,33 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 					DeathOfProkaryote(i, j);	//Prokaryote was marked for death upon division (incomplete cycle).
 					continue;
 				}
-				else	//All is good, division is actually going to happen!
+
+				//If you get here, all is good, division is actually going to happen!
+				if(PPSpace[i][j]->nr_offspring == 0)
 				{
-					//cout << "Going to divide" << endl;
-					if(PPSpace[i][j]->nr_offspring == 0)
-					{
-						cum_time_alive += Time - PPSpace[i][j]->time_of_appearance;
-						nr_first_births++;
-					}
-					cum_fit_def += PPSpace[i][j]->fitness_deficit;
-
-					if (PPSpace[neigh.first][neigh.second] != NULL)	DeathOfProkaryote(neigh.first, neigh.second);	//Depending on the DivisionProtocol, we're committed to overgrowing neighbours.
-
-					PPSpace[neigh.first][neigh.second] = new Prokaryote();
-					p_id_count_++;
-					PPSpace[neigh.first][neigh.second]->Mitosis(PPSpace[i][j], p_id_count_);
-					if(PPSpace[neigh.first][neigh.second]->mutant)	Fossils->BuryFossil(PPSpace[neigh.first][neigh.second]);
-					nr_birth_events++;
-					//cout << "Divided" << endl;
+					cum_time_alive += Time - PPSpace[i][j]->time_of_appearance;
+					nr_first_births++;
 				}
+				cum_fit_def += PPSpace[i][j]->fitness_deficit;
+
+				if (PPSpace[neigh.first][neigh.second] != NULL)	DeathOfProkaryote(neigh.first, neigh.second);	//Depending on the DivisionProtocol, we're committed to overgrowing neighbours.
+
+				PPSpace[neigh.first][neigh.second] = new Prokaryote();
+				p_id_count_++;
+				PPSpace[neigh.first][neigh.second]->Mitosis(PPSpace[i][j], p_id_count_);
+				if(PPSpace[neigh.first][neigh.second]->mutant)	Fossils->BuryFossil(PPSpace[neigh.first][neigh.second]);
+				nr_birth_events++;
 			}
-			//cout << "Going to update expression" << endl;
+
 			PPSpace[i][j]->G->UpdateGeneStates();
-			//cout << "Going to update stage" << endl;
 			if (PPSpace[i][j]->Stage <= 4)	PPSpace[i][j]->UpdateCellCycle();	//Stage 5 is marked for death upon division (no second chances).
 
-			//cout << "Updated stage" << endl;
 			if (PPSpace[i][j]->Stage == 2 && PPSpace[i][j]->priviliges == true)
 			{
 				resource = CollectResource(i, j, Environment);
 				PPSpace[i][j]->Replicate(resource);
 			}
-			//cout << "Replicated" << endl;
+
 			if (PPSpace[i][j]->Stage == 6)	DeathOfProkaryote(i, j);	//Cell was marked for immediate death (i.e. no waiting for attempted division).
 
 		}
@@ -757,16 +745,14 @@ bool Population::IsReadyToDivide(int i, int j, int nrow, int ncol)	//Figure out 
 		//Division is attempted in Stage 4 or higher (where 5 marks for death), and with probability determined by repl_rate corrected for fitness_deficit.
 		//Note that the below statement is negative, so it uses "OR" constructions.
 	if (PPSpace[i][j]->Stage < 4 || PPSpace[i][j]->priviliges == false || uniform() > (repl_rate - PPSpace[i][j]->fitness_deficit))
-{
-	//cout << "Not ready" << endl;
-	return false;
-}
+	{
+		return false;
+	}
+
 	else	//Options are sorted from most to least aggressive.
 	{
-		//cout << "Ready" << endl;
 		if (DivisionProtocol == 0)	//Overgrow neighbour.
 		{
-			//cout << "Picked overgrowing of neigh" << endl;
 			return true;
 		}
 		else if (DivisionProtocol == 1)	//Compete with neighbour.
