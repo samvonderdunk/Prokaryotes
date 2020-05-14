@@ -94,6 +94,28 @@ const int environmental_variation = 10;
 const bool resource_dependent_replication = false;
 const bool environmental_gradient = true;
 
+//Protocol for division:
+// 0 - overgrow neighbour.
+// 1 - compete with neighbour.
+// 2 - wait for empty site.
+const int DivisionProtocol = 0;
+
+//Penalties for "wrong" cell-cycles:
+// 0 - no penalty but also not allowed to keep replicating or attempting mitosis if in "S" or "M".
+// 1 - abortion; cell reset to Stage 1 and replicated beads are lost.
+// 2 - death upon division; cell is marked for death when it attempts to divide.
+// 3 - immediate death; cell is marked for immediate death.
+const int ShortReplProtocol = 0;
+const int EarlyMitProtocol = 0;
+const int BadUpdProtocol = 0;
+
+// Protocol settings: DivisionProtocol, ShortReplProtocol, EarlyMitProtocol, BadUpdProtocol.
+// Muts_At_Divo:    2, 0, 0, 0
+// Risk_Wait_Div:   2, 0, 2, 0
+// Commit_Div:      0, 0, 2, 0
+// Grow_Or_Stall:   1, ?, ?, 0
+// C. pneumoniae:   ~0, 1, 2, 0   (I did not actually use 0 for DivisionProtocol, but "free waiting" in "M").
+
 //constants for Prokaryote.cc
 
 //Variables defined in World.cc
@@ -122,16 +144,7 @@ const string genestate_file="";
 const string backup_file="";
 const string anctrace_file="";
 
-//Below is the stages as defined in the model version 2.1.
-// const bool StageTargets[4][5] = {
-//   false, false, true, false, true,      // 0 0 1 0 1    G1 -> S
-//   false, true, false, false, false,     // 0 1 0 0 0    S -> G2
-//   true, false, false, false, false,     // 1 0 0 0 0    G2 -> M
-//   true, false, false, true, true        // 1 0 0 1 1    M -> G1
-//                                         // 1-CtrA 2-GcrA 3-DnaA 4-CcrM 5-SciP
-// };
-
-//In version 2.2, they were redefined as below.
+//The current definition of the stages.
 const bool StageTargets[4][5] = {
   true, false, false, true, true,       // 1 0 0 1 1    G1
   false, false, true, false, true,      // 0 0 1 0 1    S
@@ -139,5 +152,14 @@ const bool StageTargets[4][5] = {
   true, false, false, false, false,     // 1 0 0 0 0    M
                                         // 1-CtrA 2-GcrA 3-DnaA 4-CcrM 5-SciP
 };
+
+//Below is the stages as defined in the earliest version of the model.
+// const bool StageTargets[4][5] = {
+//   false, false, true, false, true,      // 0 0 1 0 1    G1 -> S
+//   false, true, false, false, false,     // 0 1 0 0 0    S -> G2
+//   true, false, false, false, false,     // 1 0 0 0 0    G2 -> M
+//   true, false, false, true, true        // 1 0 0 1 1    M -> G1
+//                                         // 1-CtrA 2-GcrA 3-DnaA 4-CcrM 5-SciP
+// };
 
 #endif

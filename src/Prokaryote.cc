@@ -32,14 +32,12 @@ void Prokaryote::ClonePPFromPP(Prokaryote* PP_template, int tot_prok_count)
 	mutant = PP_template->mutant;	//If you clone a mutant (or the first prokaryote), its clone will also count as a mutant.
 }
 
-void Prokaryote::Replicate(double env, int res)
+void Prokaryote::Replicate(double resource)
 {
 	if (G->pos_fork != G->pos_anti_ori)	//If the fork is has reached the opposite of ORI of the genome, there is nothing to replicate.
 	{
-		if (uniform() <= 1.0)	//later the chance that replication proceeds one step depends on several things.
-		{
-			G->ReplicateGenomeStep(env, res);
-		}
+		G->ReplicateGenomeStep(resource);
+		time_replicated++;
 	}
 }
 
@@ -76,6 +74,7 @@ void Prokaryote::Abortion()
 	Stage = 0;
 	ready_for_division = false;
 	time_replicated = 0;
+	time_stationary = 0;
 }
 
 void Prokaryote::EmptyProkaryote()
@@ -95,6 +94,8 @@ void Prokaryote::EmptyProkaryote()
 	fitness_deficit = 0.;
 	saved_in_graveyard = false;
 	time_replicated = 0;
+	time_stationary = 0;
+	priviliges = true;
 	maturing_time = 0;
 }
 
@@ -123,74 +124,33 @@ void Prokaryote::PrintData(bool include_genome_data)
 
 void Prokaryote::UpdateCellCycle()	//Check whether changes in GeneStates make us go forward in the cell cycle.
 {
-	int s, match_next_state;
+	int evaluate_stage = Stage;	//Note that Stage includes "D", so "S" corresponds to Stage 2 but to EvaluateStage 1.
+	priviliges = true;	//Priviliges are only removed for one turn that you did not acquire the desired expression...
 
-	for (s=0; s<5; s++)
-	{
-		if (s==Stage)
-		{
-			// if (Stage == 4 || (Stage == 2 && G->pos_fork != G->pos_anti_ori))	//If you were in Stage 4, you have to earn it again; you are set back to stage 3 and evaluated for matching stage 4 anew.
-			if (Stage == 4 || (Stage == 2 && (time_replicated < replication_time || G->pos_fork != G->pos_anti_ori)))	//Substitute for the above line to learn prokaryotes the trick of S-stage extension.
-			// if(Stage == 2 && (time_replicated < replication_time || G->pos_fork != G->pos_anti_ori))	//Prokaryotesv2.3: You don't stay in M-stage anymore, so the above lines are deprecated.
-			{
-				Stage--;
-				s--;	//This means we will evaluate a Stage-4 cell for Stage 4 again.
-			}
+		//M and S expression has to be maintained actively (in protocols where division does not require an empty site, individuals will never get here in "M" expression; but otherwise staying in "M" is not free).
+		//Stage 4 and 2 cells will be evaluated for those stages again.
+	if (Stage == 4 || (Stage == 2 && (time_replicated < replication_time || G->pos_fork != G->pos_anti_ori)))		evaluate_stage--;
 
-			match_next_state = G->MatchNextState(s);
+	/*Evaluation*/
 
-			if (match_next_state==5)
-			{
-				Stage++;	//You have reached the next stage.
-			}
+		//You have reached the next stage.
+	if (G->MatchNextState(evaluate_stage) == 5)																													Stage++;
+		//The strictest evaluation criterium first (i.e. NOT staying in "S" when you're not done replicating).
+	else if (Stage == 2 && (time_replicated < replication_time || G->pos_fork != G->pos_anti_ori)))			UpdatePenalty(ShortReplProtocol);
 
-			else	//If you don't reach your normal next-state, we check whether you have reached the M-stage. Then you are updated to M-stage immediately. If you do not go there from Stage 3 (G2, as you should) we put your time_replicated to 0. Thus, reaching M-stage too soon will always kill you. You are not allowed to skip any of G1, S (multiple steps) and G2.
-			{
-				match_next_state = G->MatchNextState(3);	//Evaluate for M-stage.
-				if (match_next_state==5)
-				{
-					time_replicated = 0;	//The death penalty.
-					Stage = 4;
-				}
-			}
+	else if (G->MatchNextState(3) == 5)																																	UpdatePenalty(EarlyMitProtocol);
+		//Even if we don't do competition upon division it does not hurt to track time_stationary by default.
+	else if (G->MatchNextState(0) == 5 || G->MatchNextState(2) == 5)																		time_stationary++;
 
-			/*	//Use this code to penalize not matching your next state and if you want, to set expression to the correct state.
-			else	//Let's try to penalize everything that does not fit into our cell-cycle scheme: G1-S-S-S-S-(etc.)-G2-M-M-M-M-(mitosis)-G1-S-S-S-S...
-			{
-				fitness_deficit += 0.01 * (5-match_next_state);
-				Stage = s+1;
+	else																																																UpdatePenalty(BadUpdProtocol);
 
-				git = G->GeneTypes->begin();	//Remove expression of cell-cycle genes.
-				while (git != G->GeneTypes->end())
-				{
-					if (*git < 6)
-					{
-						index = distance(G->GeneTypes->begin(), git);
-						G->GeneStates->at(index) = 0;
-					}
-					git++;
-				}
+}
 
-				Genome::iter it = G->BeadList->begin();	//Now keep it in there physically.
-				while (it != G->BeadList->end())
-				{
-					if(G->IsGene(*it) && (*it)->type < 6)
-					{
-						Gene* gene = dynamic_cast<Gene*>(*it);
-						gene->expression = (StageTargets[s][gene->type-1]==true) ? 1:0;	//Set this gene to what it should be in S-stage.
-						git = find(G->GeneTypes->begin(), G->GeneTypes->end(), gene->type);
-						if(git != G->GeneTypes->end())
-						{
-							index = distance(G->GeneTypes->begin(), git);
-							G->GeneStates->at(index) += gene->expression;
-						}
-					}
-					it++;
-				}
-			}
-			*/
-
-			break;		//One stage evaluation is more than enough for one timestep :)
-		}
-	}
+void Prokaryote::UpdatePenalty(int protocol)
+{
+	//Penalties sorted from the leanest to the strictest.
+	if (protocol == 0)				priviliges = false;	//No penalty, but does not allow you to keep replicating or attempting in Stage 2 or 4. Since the next penalties are all worse, we don't have to set the priviliges to false in those cases.
+	else if (protocol == 1)		Abortion();
+	else if (protocol == 2)		Stage = 5;	//Sentenced to wait until mitosis and then die (it won't update anymore).
+	else if (protocol == 3)		Stage = 6;	//Sentenced to death immediately (see Population.cc).
 }

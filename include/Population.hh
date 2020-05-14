@@ -20,6 +20,7 @@ class Population
 
 		typedef std::list<int>::iterator iter;
 		typedef std::list<Prokaryote*>::iterator iterpps;
+		typedef std::pair<int,int> coords;	//Allow to define row, col pair of int's (use for functions).
 
 		unsigned long long p_id_count_;	// Counter for all agents
 
