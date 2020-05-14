@@ -754,7 +754,7 @@ void Population::MargolusDiffusion()	//Based on Brem's function from Evolvabear_
 	//kernel=0 does not need to deal with wrapped boundaries if NR and NC are even, but kernel=1 does.
 	for (kernel=0; kernel<2; kernel++)
 	{
-		for(i=kernel; i<NROW-1+kernel; i+=2)	for(j=kernel; j<NCOL-1+kernel; j+=2)
+		for(i=kernel; i<NR-1+kernel; i+=2)	for(j=kernel; j<NC-1+kernel; j+=2)
 		{
 			if (uniform()<0.5)	//Counter-clockwise.
 			{
