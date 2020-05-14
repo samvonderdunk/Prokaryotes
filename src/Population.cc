@@ -475,7 +475,7 @@ bool Population::CompareExpressionProgression(Prokaryote* PP1, Prokaryote* PP2, 
 
 void Population::FollowSingleIndividual()
 {
-	Prokaryote* PP, *CP;
+	Prokaryote* PP;
 
 	PP = new Prokaryote();
 	PP->InitialiseProkaryote();
@@ -484,38 +484,28 @@ void Population::FollowSingleIndividual()
 	{
 		if(environmental_noise)	SetEnvironment();
 		//All we want is to know the expression pattern at each time step.
-		cout << "T " << Time << "\tE " << Environment << "\tStage: " << PP->Stage << "\tG_len: " << PP->G->g_length << "\tExpr: " << PP->G->PrintGeneStateContent(true) << endl;
+		cout << "T " << Time << "\tE " << Environment << "\tStage: " << PP->Stage << "\tPriviliges: " << (PP->priviliges==true)?1:0 << "\tG_len: " << PP->G->g_length << "\tExpr: " << PP->G->PrintGeneStateContent(true) << endl;
 
 		PP->G->UpdateGeneStates();
-		PP->UpdateCellCycle();
+		if (PP->Stage <= 4)	PP->UpdateCellCycle();
 
-		if (PP->Stage == 2)
+		if (PP->Stage == 2 && PP->priviliges == true)
 		{
 			PP->Replicate(Environment);
 			PP->time_replicated++;
 		}
-		else if(PP->Stage == 4)
+		else if (PP->Stage > 4)	//Marked for immediate or future death.
 		{
-			if (PP->time_replicated < replication_time)
-			{
-				//If you would normally die because you reach M to fast, you here print that you went to Stage -1 (dead) so that we can plot this.
-				cout << "T " << Time << "\tE " << Environment << "\tStage: -1\tG_len: " << PP->G->g_length << "\tExpr: " << PP->G->PrintGeneStateContent(true) << endl;
-				PP->Abortion();
-			}
-			else
-			{
-				//Else we give a sign that we have actually reached M in a healthy way.
-				cout << "T " << Time << "\tE " << Environment << "\tStage: 4\tG_len: " << PP->G->g_length << "\tExpr: " << PP->G->PrintGeneStateContent(true) << endl;
-				CP = new Prokaryote();	//Probably I could also use Abortion over here, but out of laziness I will leave it like this.
-				p_id_count_++;
-				CP->Mitosis(PP, p_id_count_);
-
-				//The child is immediately removed, because we are following its parent.
-				delete CP;
-				CP = NULL;
-			}
+			cout << "T " << Time << "\tE " << Environment << "\tStage: -1\tPriviliges: " << (PP->priviliges==true)?1:0 << "\tG_len: " << PP->G->g_length << "\tExpr: " << PP->G->PrintGeneStateContent(true) << endl;
+			PP->Abortion();	//Although the cell is killed we can just start again by doing an abortion.
+		}
+		else if (PP->Stage == 4 && PP->priviliges == true && uniform() < repl_rate-PP->fitness_deficit)	//Attempting division. Since there are no other living beings, I don't have to consider the different DivisionProtocols or pick a random neighbour.
+		{
+			cout << "T " << Time << "\tE " << Environment << "\tStage: 4\tPriviliges: " << (PP->priviliges==true)?1:0 << "\tG_len: " << PP->G->g_length << "\tExpr: " << PP->G->PrintGeneStateContent(true) << endl;
+			PP->Abortion();	//The cell succesfully divides, but we don't need to create an actual child to continue looking at cell-cycle dynamics.
 		}
 	}
+
 	delete PP;
 	PP = NULL;
 }
