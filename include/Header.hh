@@ -105,7 +105,7 @@ const int DivisionProtocol = 0;
 // 1 - abortion; cell reset to Stage 1 and replicated beads are lost.
 // 2 - death upon division; cell is marked for death when it attempts to divide.
 // 3 - immediate death; cell is marked for immediate death.
-const int ShortReplProtocol = 1;
+const int ShortReplProtocol = 0;
 const int EarlyMitProtocol = 2;
 const int BadUpdProtocol = 0;
 
@@ -114,7 +114,9 @@ const int BadUpdProtocol = 0;
 // Risk_Wait_Div:   2, 0, 2, 0
 // Commit_Div:      0, 0, 2, 0
 // Grow_Or_Stall:   1, ?, ?, 0
+
 // C. pneumoniae:   ~0, 1, 2, 0   (I did not actually use 0 for DivisionProtocol, but "free waiting" in "M").
+// C. trachomatis:  0, 0, 2, 0
 
 //constants for Prokaryote.cc
 

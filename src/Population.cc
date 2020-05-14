@@ -484,24 +484,24 @@ void Population::FollowSingleIndividual()
 	{
 		if(environmental_noise)	SetEnvironment();
 		//All we want is to know the expression pattern at each time step.
-		cout << "T " << Time << "\tE " << Environment << "\tStage: " << PP->Stage << "\tPriviliges: " << (PP->priviliges==true)?1:0 << "\tG_len: " << PP->G->g_length << "\tExpr: " << PP->G->PrintGeneStateContent(true) << endl;
+		cout << "T " << Time << "\tE " << Environment << "\tStage: " << PP->Stage << "\tPriviliges: " << PP->priviliges << "\tG_len: " << PP->G->g_length << "\tExpr: " << PP->G->PrintGeneStateContent(true) << endl;
 
 		PP->G->UpdateGeneStates();
 		if (PP->Stage <= 4)	PP->UpdateCellCycle();
 
 		if (PP->Stage == 2 && PP->priviliges == true)
 		{
-			PP->Replicate(Environment);
+			PP->Replicate(repl_step_size-Environment);
 			PP->time_replicated++;
 		}
 		else if (PP->Stage > 4)	//Marked for immediate or future death.
 		{
-			cout << "T " << Time << "\tE " << Environment << "\tStage: -1\tPriviliges: " << (PP->priviliges==true)?1:0 << "\tG_len: " << PP->G->g_length << "\tExpr: " << PP->G->PrintGeneStateContent(true) << endl;
+			cout << "T " << Time << "\tE " << Environment << "\tStage: -1\tPriviliges: " << PP->priviliges << "\tG_len: " << PP->G->g_length << "\tExpr: " << PP->G->PrintGeneStateContent(true) << endl;
 			PP->Abortion();	//Although the cell is killed we can just start again by doing an abortion.
 		}
 		else if (PP->Stage == 4 && PP->priviliges == true && uniform() < repl_rate-PP->fitness_deficit)	//Attempting division. Since there are no other living beings, I don't have to consider the different DivisionProtocols or pick a random neighbour.
 		{
-			cout << "T " << Time << "\tE " << Environment << "\tStage: 4\tPriviliges: " << (PP->priviliges==true)?1:0 << "\tG_len: " << PP->G->g_length << "\tExpr: " << PP->G->PrintGeneStateContent(true) << endl;
+			cout << "T " << Time << "\tE " << Environment << "\tStage: 4\tPriviliges: " << PP->priviliges << "\tG_len: " << PP->G->g_length << "\tExpr: " << PP->G->PrintGeneStateContent(true) << endl;
 			PP->Abortion();	//The cell succesfully divides, but we don't need to create an actual child to continue looking at cell-cycle dynamics.
 		}
 	}
