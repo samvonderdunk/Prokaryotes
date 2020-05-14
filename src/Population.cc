@@ -379,7 +379,7 @@ void Population::ReproduceMasterGenome()
 	//Maybe this is not very efficient, since the programme will be writing between each reproduction event; but it is definitely simple.
 	for(int n=0; n<NrMutants; n++)
 	{
-		while(PP->G->pos_fork < PP->G->pos_anti_ori)	PP->Replicate(0,8);	//Set environment to zero, but keep replicating until you're finished.
+		while(PP->G->pos_fork < PP->G->pos_anti_ori)	PP->Replicate(100);	//One replication step should be enough for most genomes (i.e. GL <= 100).
 		CP = new Prokaryote();
 		CP->Mitosis(PP, 1);	//It does not matter which fossil_id each child gets, so I say 1.
 		if(Parent_Genome != CP->G->PrintContent(NULL, false, false)) cout << "Child #" << n << ":\t" << CP->G->PrintContent(NULL, false, false) << endl;
@@ -416,7 +416,7 @@ void Population::ScanMutationalPath()
 		{
 			delete CP;
 			CP = NULL;
-			while(PP->G->pos_fork < PP->G->pos_anti_ori) PP->Replicate(0,8);
+			while(PP->G->pos_fork < PP->G->pos_anti_ori) PP->Replicate(100);
 			CP = new Prokaryote();
 			CP->EmptyProkaryote();
 			CP->Mitosis(PP, 1);
@@ -491,7 +491,7 @@ void Population::FollowSingleIndividual()
 
 		if (PP->Stage == 2)
 		{
-			PP->Replicate(Environment, 8);
+			PP->Replicate(Environment);
 			PP->time_replicated++;
 		}
 		else if(PP->Stage == 4)
@@ -673,31 +673,47 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 
 	if(environmental_noise) SetEnvironment();	//Potential change of environment.
 
+	//cout << "Env set" << endl;
 	ResetProgressCounters();
 
 	for(u=0; u<NR*NC; u++) update_order[u]=u;
 	random_shuffle(&update_order[0], &update_order[NR*NC]);		//Is also set by initial_seed through srand(initial_seed); see World.cc
 
+	//cout << "Order updated" << endl;
 	for(u=0; u<NR*NC; u++)		//Go through the field: birth, death (and later possibly diffusion).
 	{
 		i = update_order[u]/NC;	//Row index.
 		j = update_order[u]%NC;	//Column index.
 		chance = uniform();
 
+		//cout << i << "\t" << j << endl;
 		if (environmental_gradient)	GradientEnvironment(i, j);	//Replication chunk size gradient over the field.
 
 		if (PPSpace[i][j] != NULL)	//Alive site.	Programme is written such that nothing happens at empty sites.
 		{
-			if (chance < death_rate)	DeathOfProkaryote(i, j);
+			//cout << "Alive" << endl;
+			if (chance < death_rate)
+			{
+				DeathOfProkaryote(i, j);
+				continue;
+			}
 
 			//Pick random neighbour (needed in some protocols to determine if cell is allowed to replicate).
 			coords neigh = PickNeighbour(i, j);
 
+			//cout << "Neigh picked" << endl;
+			//cout << neigh.first << "\t" << neigh.second << endl;
+			//cout << PPSpace[neigh.first][neigh.second] << endl;
 			if (IsReadyToDivide(i, j, neigh.first, neigh.second) == true)	//Will the cell attempt division?
 			{
-				if (PPSpace[i][j]->Stage == 5)	DeathOfProkaryote(i, j);	//Prokaryote was marked for death upon division (incomplete cycle).
-				else if (PPSpace[i][j]->Stage == 4)	//All is good, division is actually going to happen!
+				if (PPSpace[i][j]->Stage == 5)
 				{
+					DeathOfProkaryote(i, j);	//Prokaryote was marked for death upon division (incomplete cycle).
+					continue;
+				}
+				else	//All is good, division is actually going to happen!
+				{
+					//cout << "Going to divide" << endl;
 					if(PPSpace[i][j]->nr_offspring == 0)
 					{
 						cum_time_alive += Time - PPSpace[i][j]->time_of_appearance;
@@ -705,25 +721,28 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 					}
 					cum_fit_def += PPSpace[i][j]->fitness_deficit;
 
-					if (PPSpace[neigh.first][neigh.second] != NULL)	DeathOfProkaryote(neigh.first, neigh.second)	//Depending on the DivisionProtocol, we're committed to overgrowing neighbours.
+					if (PPSpace[neigh.first][neigh.second] != NULL)	DeathOfProkaryote(neigh.first, neigh.second);	//Depending on the DivisionProtocol, we're committed to overgrowing neighbours.
 
 					PPSpace[neigh.first][neigh.second] = new Prokaryote();
 					p_id_count_++;
 					PPSpace[neigh.first][neigh.second]->Mitosis(PPSpace[i][j], p_id_count_);
 					if(PPSpace[neigh.first][neigh.second]->mutant)	Fossils->BuryFossil(PPSpace[neigh.first][neigh.second]);
 					nr_birth_events++;
+					//cout << "Divided" << endl;
 				}
 			}
-
+			//cout << "Going to update expression" << endl;
 			PPSpace[i][j]->G->UpdateGeneStates();
+			//cout << "Going to update stage" << endl;
 			if (PPSpace[i][j]->Stage <= 4)	PPSpace[i][j]->UpdateCellCycle();	//Stage 5 is marked for death upon division (no second chances).
 
+			//cout << "Updated stage" << endl;
 			if (PPSpace[i][j]->Stage == 2 && PPSpace[i][j]->priviliges == true)
 			{
 				resource = CollectResource(i, j, Environment);
 				PPSpace[i][j]->Replicate(resource);
 			}
-
+			//cout << "Replicated" << endl;
 			if (PPSpace[i][j]->Stage == 6)	DeathOfProkaryote(i, j);	//Cell was marked for immediate death (i.e. no waiting for attempted division).
 
 		}
@@ -737,18 +756,28 @@ bool Population::IsReadyToDivide(int i, int j, int nrow, int ncol)	//Figure out 
 {
 		//Division is attempted in Stage 4 or higher (where 5 marks for death), and with probability determined by repl_rate corrected for fitness_deficit.
 		//Note that the below statement is negative, so it uses "OR" constructions.
-	if (PPSpace[i][j]->Stage < 4 || priviliges == false || uniform() > (repl_rate - PPSpace[i][j]->fitness_deficit))	return false;
+	if (PPSpace[i][j]->Stage < 4 || PPSpace[i][j]->priviliges == false || uniform() > (repl_rate - PPSpace[i][j]->fitness_deficit))
+{
+	//cout << "Not ready" << endl;
+	return false;
+}
 	else	//Options are sorted from most to least aggressive.
 	{
+		//cout << "Ready" << endl;
 		if (DivisionProtocol == 0)	//Overgrow neighbour.
 		{
+			//cout << "Picked overgrowing of neigh" << endl;
 			return true;
 		}
 		else if (DivisionProtocol == 1)	//Compete with neighbour.
 		{
 			if (PPSpace[nrow][ncol] == NULL) return true;
 			else if (PPSpace[i][j]->time_stationary > PPSpace[nrow][ncol]->time_stationary)	return true;	//Competition rule.
-			else	return false;
+			else
+			{
+				PPSpace[i][j]->Stage = 6;	//Failing in competition is lethal.
+				return false;
+			}
 		}
 		else if (DivisionProtocol == 2)	//Wait for empty site.
 		{

@@ -101,9 +101,9 @@ void Prokaryote::UpdateCellCycle()	//Check whether changes in GeneStates make us
 	/*Evaluation*/
 
 		//You have reached the next stage.
-	if (G->MatchNextState(evaluate_stage) == 5)																													Stage++;
+	if (G->MatchNextState(evaluate_stage) == 5)																													Stage = evaluate_stage + 1;
 		//The strictest evaluation criterium first (i.e. NOT staying in "S" when you're not done replicating).
-	else if (Stage == 2 && (time_replicated < replication_time || G->pos_fork != G->pos_anti_ori)))			UpdatePenalty(ShortReplProtocol);
+	else if (Stage == 2 && (time_replicated < replication_time || G->pos_fork != G->pos_anti_ori))			UpdatePenalty(ShortReplProtocol);
 
 	else if (G->MatchNextState(3) == 5)																																	UpdatePenalty(EarlyMitProtocol);
 		//Even if we don't do competition upon division it does not hurt to track time_stationary by default.

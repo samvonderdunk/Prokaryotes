@@ -77,7 +77,7 @@ const double epsilon = 1.00;
 //constants for Population.cc
 const int TimeZero=0;
 const int default_SimTime=1000000;
-const int TimeTerminalOutput = 100;  //Note that this is also the check for extinction, so let it check!
+const int TimeTerminalOutput = 1;  //Note that this is also the check for extinction, so let it check!
 const int TimeSaveGrid = 100; //How many timesteps to save the whole grid as raw data.
 const int TimeSaveBackup = 10000;
 const int TimePruneFossils = 100;
@@ -105,8 +105,8 @@ const int DivisionProtocol = 0;
 // 1 - abortion; cell reset to Stage 1 and replicated beads are lost.
 // 2 - death upon division; cell is marked for death when it attempts to divide.
 // 3 - immediate death; cell is marked for immediate death.
-const int ShortReplProtocol = 0;
-const int EarlyMitProtocol = 0;
+const int ShortReplProtocol = 1;
+const int EarlyMitProtocol = 2;
 const int BadUpdProtocol = 0;
 
 // Protocol settings: DivisionProtocol, ShortReplProtocol, EarlyMitProtocol, BadUpdProtocol.
