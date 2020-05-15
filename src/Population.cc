@@ -27,7 +27,17 @@ Population::~Population()
 	{
 		if((PPSpace[i][j])!=NULL)
 		{
-			if(PPSpace[i][j]->saved_in_graveyard)	OldGeneration[i*NC+j]=NULL;
+			if(PPSpace[i][j]->saved_in_graveyard)	//With diffusion I have to find the location in the OldGeneration array, bc it is not per se the same (i.e. cannot be determined from the same i, j).
+			{
+				for (n=0; n<generation_sample; n++)
+				{
+					if (OldGeneration[n] == PPSpace[i][j])
+					{
+						OldGeneration[n] = NULL;
+						break;
+					}
+				}
+			}
 			if(PPSpace[i][j]->mutant)	Fossils->EraseFossil(PPSpace[i][j]->fossil_id);
 			delete (PPSpace[i][j]);
 			PPSpace[i][j]=NULL;
@@ -62,7 +72,7 @@ void Population::InitialisePopulation()
 	cout << "Initial genome = " << PP->G->PrintContent(NULL, true, false) << endl;	//Pass true as argument to print the nicely colored format for the terminal output.
 	//Now fill the field with this prokaryote (I guess this is less intensive then creating new randomized prokaryotes for the whole grid).
 	for(int row=0; row<NR; row++) for(int col=0; col<NC; col++){
-		if(uniform() < 0.1)
+		if(row<20 && col<20)
 		{
 			p_id_count_++;	//Make sure the first individual gets p_id_count_ of 1.
 			PP_Copy=new Prokaryote();
@@ -70,9 +80,9 @@ void Population::InitialisePopulation()
 			PP_Copy->Ancestor = NULL;	//Null-pointer tells me the cell was initialised.
 			PPSpace[row][col] = PP_Copy;
 			Fossils->BuryFossil(PPSpace[row][col]);
-			if(p_id_count_<=generation_sample)
+			if (row*NC+col <= generation_sample)
 			{
-				OldGeneration[p_id_count_-1] = PPSpace[row][col];	//Put a subset of prokaryote pointers in the OldGeneration array.
+				OldGeneration[row*NC+col] = PPSpace[row][col];	//Put a subset of prokaryote pointers in the OldGeneration array.
 				PPSpace[row][col]->saved_in_graveyard = true;
 			}
 		}
@@ -268,13 +278,10 @@ void Population::ReadAncestorFile()
 	}
 
 	printf("Reading ancestors from file: %s\n", anctrace_reboot.c_str());
-	int count_lines = 0;
 	int count_alive = 0;
 	int count_fossils = 0;
 	while(getline(infile,line))
 	{
-		// count_lines++;
-		// cout << count_lines << endl;
 		end_data = line.find("\t");
 		data = line.substr(0,end_data);
 		stringstream(data) >> ID;
@@ -763,6 +770,7 @@ void Population::MargolusDiffusion()	//Based on Brem's function from Evolvabear_
 				PPSpace[i%NR][j%NC] = PPSpace[i%NR][(j+1)%NC];
 				PPSpace[i%NR][(j+1)%NC] = PPSpace[(i+1)%NR][(j+1)%NC];
 				PPSpace[(i+1)%NR][(j+1)%NC] = PPtemp;
+				PPtemp = NULL;
 			}
 			else								//Clockwise.
 			{
@@ -771,6 +779,7 @@ void Population::MargolusDiffusion()	//Based on Brem's function from Evolvabear_
 				PPSpace[i%NR][j%NC] = PPSpace[(i+1)%NR][j%NC];
 				PPSpace[(i+1)%NR][j%NC] = PPSpace[(i+1)%NR][(j+1)%NC];
 				PPSpace[(i+1)%NR][(j+1)%NC] = PPtemp;
+				PPtemp = NULL;
 			}
 		}
 	}
@@ -839,7 +848,6 @@ void Population::GradientEnvironment(int i, int j)
 double Population::CollectResource(int i, int j, double Environment)
 {
 	double resource, repl_noise;
-	int neigh_count;
 
 	resource = repl_step_size - Environment;
 
@@ -1136,9 +1144,10 @@ void Population::OutputBackup()
 
 void Population::ShowGeneralProgress()
 {
-	int alive=0, live_comparisons=0, present_alives=0;//, g1=0, s=0, g2=0, m=0, d=0;
+	int u, alive=0, live_comparisons=0, present_alives=0;//, g1=0, s=0, g2=0, m=0, d=0;
 	int stages[5] = {0, 0, 0, 0, 0};
 	double pop_distance = .0, pop_msd = .0;
+	bool already_saved_in_graveyard;
 
 	for (int i=0; i<NR; i++) for(int j=0; j<NC; j++)
 	{
@@ -1157,7 +1166,21 @@ void Population::ShowGeneralProgress()
 					delete OldGeneration[i*NC+j];	//If this fellow was dead, remove the grave if it is not interesting for the fossil record.
 					OldGeneration[i*NC+j]=NULL;
 				}
-				else	OldGeneration[i*NC+j]->saved_in_graveyard = false;	//We have to free them from this constrain; otherwise they can never be thrown out of the fossil record.
+				else
+				{
+					//If it has moved somewhere else it might already be included in the next generation sample (bc it is alive at an "upstream" location), so then we should not set "saved_in_graveyard" to "false".
+					already_saved_in_graveyard = false;
+					for (u=0; u<i*NC+j; u++)
+					{
+						if (OldGeneration[i*NC+j] == PPSpace[u/NC][u%NC])
+						{
+							already_saved_in_graveyard = true;
+							break;
+						}
+					}
+
+					if (!already_saved_in_graveyard)	OldGeneration[i*NC+j]->saved_in_graveyard = false;	//We have to free them from this constrain; otherwise they can never be thrown out of the fossil record.
+				}
 			}
 			OldGeneration[i*NC+j] = PPSpace[i][j];	//Update OldGeneration for the next ShowGeneralProgress. We also do this if one of these pointers was NULL.
 			if(PPSpace[i][j] != NULL)	PPSpace[i][j]->saved_in_graveyard = true;	//Even if it dies, it will be kept around at least until the next generation has been compared to it (or longer if it is interesting for the fossil record).

@@ -78,12 +78,12 @@ const double epsilon = 1.00;
 const int TimeZero=0;
 const int default_SimTime=1000000;
 const int TimeTerminalOutput = 1;  //Note that this is also the check for extinction, so let it check!
-const int TimeSaveGrid = 100; //How many timesteps to save the whole grid as raw data.
-const int TimeSaveBackup = 10000;
-const int TimePruneFossils = 100;
-const int TimeOutputFossils = 10000;
+const int TimeSaveGrid = 1; //How many timesteps to save the whole grid as raw data.
+const int TimeSaveBackup = 10;
+const int TimePruneFossils = 10;
+const int TimeOutputFossils = 10;
 
-const double diffusion_rate = 1;  // >1: multiple Margolus steps per time step, <1: probability of single Margolus step each time step.
+const double diffusion_rate = .1;  // >1: multiple Margolus steps per time step, <1: probability of single Margolus step each time step.
 const double death_rate = 0.01;
 const double repl_rate = 1.0;
 const int replication_neighbourhood = 3;  //i.e. a 3x3 grid represents the neighbourhood.
