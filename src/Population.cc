@@ -29,11 +29,11 @@ Population::~Population()
 		{
 			if(PPSpace[i][j]->saved_in_graveyard)	//With diffusion I have to find the location in the OldGeneration array, bc it is not per se the same (i.e. cannot be determined from the same i, j).
 			{
-				for (n=0; n<generation_sample; n++)
+				for (n=0;n<generation_sample;n++)
 				{
-					if (OldGeneration[n] == PPSpace[i][j])
+					if (OldGeneration[n]==PPSpace[i][j])
 					{
-						OldGeneration[n] = NULL;
+						OldGeneration[n]=NULL;
 						break;
 					}
 				}
@@ -1144,20 +1144,21 @@ void Population::OutputBackup()
 
 void Population::ShowGeneralProgress()
 {
-	int u, alive=0, live_comparisons=0, present_alives=0;//, g1=0, s=0, g2=0, m=0, d=0;
+	int u, alive=0, live_comparisons=0, present_alives=0;
 	int stages[5] = {0, 0, 0, 0, 0};
 	double pop_distance = .0, pop_msd = .0;
 	bool already_saved_in_graveyard;
 
-	for (int i=0; i<NR; i++) for(int j=0; j<NC; j++)
+	for(int i=0; i<NR; i++) for(int j=0; j<NC; j++)
 	{
-		if (Time != 0 && (i*NC + j) < generation_sample)
+		if (Time!=0 && (i*NC + j)<generation_sample)
 		{
-			if(OldGeneration[i*NC+j] != NULL)
+			if (OldGeneration[i*NC+j] != NULL)
 			{
-				if  (PPSpace[i][j] != NULL)
+				if (PPSpace[i][j] != NULL)
 				{
-					pop_distance += MatrixDistance(OldGeneration[i*NC+j], PPSpace[i][j]);	//If the square was or is empty, it is not included in the calculation of pop_distance. GenomeToNetwork() should return pointers to 2D arrays.
+					//Compare current individual of grid with the one that was here at the previous measure frame.
+					pop_distance += MatrixDistance(OldGeneration[i*NC+j], PPSpace[i][j]);
 					live_comparisons++;
 				}
 				//OldGeneration[i*NR+j] is an actual prokaryote; before we overwrite we have to see whether it is time to completely delete this guy from all records (when it is not a mutant and not alive, thus not in the fossilrecord) or whether we just stop saving it in the graveyard (allowing the fossilrecord to decide whether it is still interesting for the geneology).
@@ -1178,7 +1179,6 @@ void Population::ShowGeneralProgress()
 							break;
 						}
 					}
-
 					if (!already_saved_in_graveyard)	OldGeneration[i*NC+j]->saved_in_graveyard = false;	//We have to free them from this constrain; otherwise they can never be thrown out of the fossil record.
 				}
 			}
