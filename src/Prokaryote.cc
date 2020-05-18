@@ -43,7 +43,7 @@ void Prokaryote::InitialiseProkaryote(){
 	else	G->InitialiseRandomGenome();
 }
 
-void Prokaryote::ClonePPFromPP(Prokaryote* PP_template, int tot_prok_count)
+void Prokaryote::ClonePPFromPP(Prokaryote* PP_template, unsigned long long tot_prok_count)
 {
 	EmptyProkaryote();
 	//Copy genome from template. This includes the expression levels of each gene.
@@ -63,7 +63,7 @@ void Prokaryote::Replicate(double resource)
 	}
 }
 
-void Prokaryote::Mitosis(Prokaryote* parent, int tot_prok_count)
+void Prokaryote::Mitosis(Prokaryote* parent, unsigned long long tot_prok_count)
 {
 	EmptyProkaryote();
 	fossil_id = tot_prok_count;

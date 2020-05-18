@@ -923,7 +923,7 @@ void Population::ResetProgressCounters()
 
 void Population::PruneFossilRecord()
 {
-	std::list<int> AllFossilIDs;
+	std::list<unsigned long long> AllFossilIDs;
 
 	for(int i=0; i<NR; i++)	for(int j=0; j<NC; j++)
 	{
@@ -950,7 +950,7 @@ void Population::PruneFossilRecord()
 	while(ip != (*Fossils).FossilList.end())
 	{
 		// Search if stored agent was also found by tracing back:
-		int fossilID = (*ip)->fossil_id;
+		unsigned long long fossilID = (*ip)->fossil_id;
 		iter findit = std::find(AllFossilIDs.begin(),AllFossilIDs.end(),fossilID);
 		// If not, delete the fossil unless it is still alive or is still saved in the graveyard. If a prokaryote dies, the graveyard-flag remains for one ShowGeneralProgress() cycle at most, so that the fossil can be deleted at the next pruning step. If ShowGeneralProgress() precedes PruneFossilRecord(), this is issue is even avoided, because flags are already removed off dead prokaryotes.
 		if(findit==AllFossilIDs.end() && !(*ip)->alive && !(*ip)->saved_in_graveyard)

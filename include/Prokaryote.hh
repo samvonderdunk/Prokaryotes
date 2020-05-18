@@ -35,10 +35,10 @@ class Prokaryote{
 
 		void EmptyProkaryote();
 		void InitialiseProkaryote();
-		void ClonePPFromPP(Prokaryote* PP_template, int tot_prok_count);
+		void ClonePPFromPP(Prokaryote* PP_template, unsigned long long tot_prok_count);
 
 		void Replicate(double resource);
-		void Mitosis(Prokaryote* parent, int tot_prok_count);
+		void Mitosis(Prokaryote* parent, unsigned long long tot_prok_count);
 		void UpdateCellCycle();
 		void UpdatePenalty(int protocol);
 		void Abortion();
