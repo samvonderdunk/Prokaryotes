@@ -72,7 +72,8 @@ void Population::InitialisePopulation()
 	cout << "Initial genome = " << PP->G->PrintContent(NULL, true, false) << endl;	//Pass true as argument to print the nicely colored format for the terminal output.
 	//Now fill the field with this prokaryote (I guess this is less intensive then creating new randomized prokaryotes for the whole grid).
 	for(int row=0; row<NR; row++) for(int col=0; col<NC; col++){
-		if(row<20 && col<20)
+		// if(row<20 && col<20)	//Initialise square
+		if (uniform() < 0.1)	//Initialise lower density
 		{
 			p_id_count_++;	//Make sure the first individual gets p_id_count_ of 1.
 			PP_Copy=new Prokaryote();
@@ -99,7 +100,20 @@ void Population::ContinuePopulationFromBackup()
 {
 	ReadBackupFile();
 	if(anctrace_reboot != "")	ReadAncestorFile();	//Currently, the fossil_ids are missing from the backup-file so it is impossible to link the fossils to live prokaryotes. But in the new version this will be possible.
-	// PruneFossilRecord();
+	else	//Otherwise we will reset the fossil_ids to prevent these getting out of hand.
+	{
+		p_id_count_ = 0;
+		for (int i=0; i<NR; i++)	for(int j=0; j<NC; j++)
+		{
+			if (PPSpace[i][j]!=NULL)
+			{
+				p_id_count_++;
+				PPSpace[i][j]->fossil_id = p_id_count_;	//Other things such as time_of_appearance and Ancestor are set to zero by the EmptyProkaryote function.
+			}
+		}
+	}
+
+	PruneFossilRecord();
 
 	if (environmental_noise)	SetEnvironment();
 }
