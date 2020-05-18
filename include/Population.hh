@@ -19,6 +19,7 @@ class Population
 		int p_nr_proks_;	//Probably need this...
 
 		typedef std::list<int>::iterator iter;
+		typedef std::list<unsigned long long>::iterator iterull;
 		typedef std::list<Prokaryote*>::iterator iterpps;
 		typedef std::pair<int,int> coords;	//Allow to define row, col pair of int's (use for functions).
 

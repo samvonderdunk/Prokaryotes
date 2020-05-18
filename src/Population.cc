@@ -128,6 +128,7 @@ void Population::ReadBackupFile()
 	int count_lines = 0;
 	while(getline(infile,line))
 	{
+		if (count_lines%10000 == 0 && count_lines!=0)	printf("%d\n", count_lines);
 		if (count_lines/NC >= NR || count_lines%NC >= NC)
 		{
 			printf("Backup file was larger than the field; aborting just to be safe.\n");
@@ -280,8 +281,10 @@ void Population::ReadAncestorFile()
 	printf("Reading ancestors from file: %s\n", anctrace_reboot.c_str());
 	int count_alive = 0;
 	int count_fossils = 0;
+	int count_lines = 0;
 	while(getline(infile,line))
 	{
+		if (count_lines%10000 == 0 && count_lines!=0)	printf("%d\n", count_lines);
 		end_data = line.find("\t");
 		data = line.substr(0,end_data);
 		stringstream(data) >> ID;
@@ -368,7 +371,7 @@ void Population::ReadAncestorFile()
 			PP->G->pos_anti_ori = PP->G->g_length;	//Otherwise the function PrintContent(NULL, false, true) (i.e. printing only the parental genome to a file) while think the parental genome is non-existent (pos_anti_or = 0).
 			Fossils->BuryFossil(PP);
 		}
-
+		count_lines++;
 	}
 }
 
@@ -951,7 +954,7 @@ void Population::PruneFossilRecord()
 	{
 		// Search if stored agent was also found by tracing back:
 		unsigned long long fossilID = (*ip)->fossil_id;
-		iter findit = std::find(AllFossilIDs.begin(),AllFossilIDs.end(),fossilID);
+		iterull findit = std::find(AllFossilIDs.begin(),AllFossilIDs.end(),fossilID);
 		// If not, delete the fossil unless it is still alive or is still saved in the graveyard. If a prokaryote dies, the graveyard-flag remains for one ShowGeneralProgress() cycle at most, so that the fossil can be deleted at the next pruning step. If ShowGeneralProgress() precedes PruneFossilRecord(), this is issue is even avoided, because flags are already removed off dead prokaryotes.
 		if(findit==AllFossilIDs.end() && !(*ip)->alive && !(*ip)->saved_in_graveyard)
 		{
