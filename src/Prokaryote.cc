@@ -32,7 +32,7 @@ void Prokaryote::EmptyProkaryote()
 	saved_in_graveyard = false;
 	time_replicated = 0;
 	time_stationary = 0;
-	priviliges = true;
+	priviliges = false;
 	maturing_time = 0;
 }
 
@@ -98,19 +98,22 @@ void Prokaryote::UpdateCellCycle()	//Check whether changes in GeneStates make us
 		//Stage 4 and 2 cells will be evaluated for those stages again.
 	if (Stage == 4 || (Stage == 2 && (time_replicated < replication_time || G->pos_fork != G->pos_anti_ori)))		evaluate_stage--;
 
-	/*Evaluation*/
+	/*Evaluation*/ 
 
-		//You have reached the next stage.
-	if (G->MatchNextState(evaluate_stage) == 5)																													Stage = evaluate_stage + 1;
-		//The strictest evaluation criterium first (i.e. NOT staying in "S" when you're not done replicating).
-	else if (Stage == 2 && (time_replicated < replication_time || G->pos_fork != G->pos_anti_ori))			UpdatePenalty(ShortReplProtocol);
+            //You have reached the next stage.
+	if (G->MatchNextState(evaluate_stage) == 5)    Stage = evaluate_stage + 1;
+	else
+	{
+			//The worst penalty should come first...
+		if (G->MatchNextState(3) == 5)    UpdatePenalty(EarlyMitProtocol);
+			//The strictest evaluation criterium first (i.e. NOT staying in "S" when you're not done replicating).
+		else if (Stage == 2 && (time_replicated < replication_time || G->pos_fork != G->pos_anti_ori))    UpdatePenalty(ShortReplProtocol);
 
-	else if (G->MatchNextState(3) == 5)																																	UpdatePenalty(EarlyMitProtocol);
-		//Even if we don't do competition upon division it does not hurt to track time_stationary by default.
-	else if (G->MatchNextState(0) == 5 || G->MatchNextState(2) == 5)																		time_stationary++;
-
-	else																																																UpdatePenalty(BadUpdProtocol);
-
+		else  UpdatePenalty(BadUpdProtocol);
+                
+			//Even if we don't do competition upon division it does not hurt to track time_stationary by default.
+		if (G->MatchNextState(0) == 5 || G->MatchNextState(2) == 5)   time_stationary++;
+	}
 }
 
 void Prokaryote::UpdatePenalty(int protocol)

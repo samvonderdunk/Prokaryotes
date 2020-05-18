@@ -96,6 +96,8 @@ void Population::InitialisePopulation()
 	cout << "Initial environment = " << Environment << endl;
 }
 
+
+//Soon, priviliges will have to be read from the backup-file as well.
 void Population::ContinuePopulationFromBackup()
 {
 	ReadBackupFile();
@@ -109,10 +111,12 @@ void Population::ContinuePopulationFromBackup()
 			{
 				p_id_count_++;
 				PPSpace[i][j]->fossil_id = p_id_count_;	//Other things such as time_of_appearance and Ancestor are set to zero by the EmptyProkaryote function.
+				if (PPSpace[i][j]->Stage==4 && PPSpace[i][j]->G->pos_fork!=PPSpace[i][j]->G->pos_anti_ori)	PPSpace[i][j]->Stage = 5;	//Continuing from old branches means that stage-4 can have a different meaning so we tag these individuals for death.
 			}
 		}
 	}
 
+	OutputBackup();
 	PruneFossilRecord();
 
 	if (environmental_noise)	SetEnvironment();
@@ -274,7 +278,6 @@ void Population::ReadBackupFile()
 		printf("Backup file was too small for the field; aborting just to be safe.\n");
 		exit(1);
 	}
-	OutputBackup();
 }
 
 void Population::ReadAncestorFile()
@@ -763,7 +766,7 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 		else
 		{
 			if (uniform() < diffusion_steps)	MargolusDiffusion();
-			diffusion_steps = -1.;	//Make sure that it is not slightly above zero (?)
+			diffusion_steps -= 1.;	//Make sure that it is not slightly above zero (?)
 		}
 	}
 
@@ -1139,7 +1142,7 @@ void Population::OutputBackup()
 			fprintf(f, "%s\t", PPSpace[i][j]->G->PrintGeneStateContent(false).c_str());
 			fprintf(f, "%s\t", PPSpace[i][j]->G->PrintGeneTypeContent().c_str());
 			fprintf(f, "%s\t", PPSpace[i][j]->G->PrintContent(NULL, false, false).c_str());
-			fprintf(f, "[%d %f %d %d %llu %d]\t", PPSpace[i][j]->Stage, PPSpace[i][j]->fitness_deficit, PPSpace[i][j]->G->pos_fork, PPSpace[i][j]->G->pos_anti_ori, PPSpace[i][j]->fossil_id, PPSpace[i][j]->mutant);
+			fprintf(f, "[%d %f %d %d %llu %d %d]\t", PPSpace[i][j]->Stage, PPSpace[i][j]->fitness_deficit, PPSpace[i][j]->G->pos_fork, PPSpace[i][j]->G->pos_anti_ori, PPSpace[i][j]->fossil_id, PPSpace[i][j]->mutant, PPSpace[i][j]->priviliges);
 			fprintf(f, "{");
 			it = PPSpace[i][j]->G->BeadList->begin();
 			while (it != PPSpace[i][j]->G->BeadList->end())
