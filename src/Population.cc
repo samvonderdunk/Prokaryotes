@@ -941,6 +941,7 @@ void Population::ResetProgressCounters()
 void Population::PruneFossilRecord()
 {
 	std::list<unsigned long long> AllFossilIDs;
+	int fossil_record_size;
 
 	for(int i=0; i<NR; i++)	for(int j=0; j<NC; j++)
 	{
@@ -961,8 +962,7 @@ void Population::PruneFossilRecord()
 	AllFossilIDs.unique();
 
 	// Delete all in FossilList that are not in AllFossilIDs (unless they are still living):
-	cout << "ID count: " << p_id_count_ << endl;
-	cout << "Before pruning: " << (*Fossils).FossilList.size() << endl;
+	fossil_record_size = (*Fossils).FossilList.size();
 	iterpps ip = (*Fossils).FossilList.begin();
 	while(ip != (*Fossils).FossilList.end())
 	{
@@ -982,7 +982,7 @@ void Population::PruneFossilRecord()
 	}
 
 	AllFossilIDs.clear();
-	cout << "After pruning: " << (*Fossils).FossilList.size() << endl;
+	cout << "ID count (" << p_id_count_ << ")\tFossil record (pruned from " << fossil_record_size << " to " << (*Fossils).FossilList.size() << ")" << endl;
 }
 
 double Population::MatrixDistance(Prokaryote* PP1, Prokaryote* PP2)
