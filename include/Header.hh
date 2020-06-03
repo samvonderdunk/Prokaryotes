@@ -71,20 +71,20 @@ const double house_duplication_mu = 0.0001;
 const double house_deletion_mu = 0.0001;
 const double house_shuffle_mu = 0.001;
 
-const double k_zero = 0.0000050;
-const double epsilon = 0.75;
+const double k_zero = 0.0000001;
+const double epsilon = 1.00;
 
 //constants for Population.cc
 const int TimeZero=0;
 const int default_SimTime=1000000;
-const int TimeTerminalOutput = 100;  //Note that this is also the check for extinction, so let it check!
+const int TimeTerminalOutput = 1;  //Note that this is also the check for extinction, so let it check!
 const int TimeSaveGrid = 100; //How many timesteps to save the whole grid as raw data.
 const int TimeSaveBackup = 10000;
 const int TimePruneFossils = 1000;
 const int TimeOutputFossils = 10000;
 
-const double diffusion_rate = 1.0;  // >1: multiple Margolus steps per time step, <1: probability of single Margolus step each time step.
-const double death_rate = 0.01;
+const double diffusion_rate = 0.2;  // >1: multiple Margolus steps per time step, <1: probability of single Margolus step each time step.
+const double death_rate = 0.001;
 const double repl_rate = 1.0;
 const int replication_neighbourhood = 3;  //i.e. a 3x3 grid represents the neighbourhood.
 const int generation_sample = 10000;

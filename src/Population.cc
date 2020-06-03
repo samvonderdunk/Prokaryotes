@@ -129,8 +129,8 @@ void Population::ReadBackupFile()
 	char* data_element;
 	string::iterator sit;
 	Genome::iter it;
-	int read_integer = 0, index, begin_data, end_data, counter, success, stage, pfork, panti_ori, temp_is_mutant;
-	bool is_mutant;
+	int read_integer = 0, index, begin_data, end_data, counter, success, stage, pfork, panti_ori, temp_is_mutant, temp_priv;
+	bool is_mutant, priv;
 	unsigned long long prok_id;
 	double deficit;
 	Prokaryote* PP;
@@ -222,13 +222,15 @@ void Population::ReadBackupFile()
 			data_element = strtok((char*)data.c_str(),"\t");
 			while(data_element != NULL)
 			{
-				success = sscanf(data_element, "%d %lf %d %d %llu %d", &stage, &deficit, &pfork, &panti_ori, &prok_id, &temp_is_mutant);
-				if(success != 6)
+				success = sscanf(data_element, "%d %lf %d %d %llu %d %d", &stage, &deficit, &pfork, &panti_ori, &prok_id, &temp_is_mutant, &temp_priv);
+				if(success != 7)
 				{
 					cerr << "Could not find sufficient information for this prokaryote. Backup file potentially corrupt.\n" << endl;
 					exit(1);
 				}
-				is_mutant = temp_is_mutant;
+				is_mutant = temp_is_mutant;	//Integers to bools (maybe not completely necessary..?)
+				priv = temp_priv;
+
 				data_element = strtok(NULL, "\t");
 				PP->Stage = stage;
 				PP->fitness_deficit = deficit;
@@ -236,6 +238,7 @@ void Population::ReadBackupFile()
 				PP->G->pos_anti_ori = panti_ori;
 				PP->fossil_id = prok_id;
 				PP->mutant = is_mutant;
+				PP->priviliges = priv;
 				if (prok_id > p_id_count_) p_id_count_ = prok_id;
 			}
 
