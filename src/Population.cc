@@ -1168,7 +1168,7 @@ void Population::OutputBackup()
 void Population::ShowGeneralProgress()
 {
 	int u, alive=0, live_comparisons=0, present_alives=0;
-	int stages[5] = {0, 0, 0, 0, 0};
+	int stages[7] = {0, 0, 0, 0, 0, 0, 0};
 	double pop_distance = .0, pop_msd = .0;
 	bool already_saved_in_graveyard;
 
@@ -1231,7 +1231,7 @@ void Population::ShowGeneralProgress()
 		}
 	}
 
-	cout << "T " << Time << "\tE " << Environment << "\t() " << alive << "\t\tD " << stages[0] << "\tG1 " << stages[1] << "\tS " << stages[2] << "\tG2 " << stages[3] << "\tM " << stages[4] << "\tReps " << nr_birth_events << "\tFitD " << (double)cum_fit_def/nr_birth_events << "\tCycleLen " << (double)cum_time_alive/nr_first_births << "\tDist " << pop_distance/live_comparisons << "\tMSD " << pop_msd/present_alives << endl;	//This will actually print during the programme, in contrast to printf().
+	cout << "T " << Time << "\tE " << Environment << "\t() " << alive << "\t\tD " << stages[0] << "\tG1 " << stages[1] << "\tS " << stages[2] << "\tG2 " << stages[3] << "\tM " << stages[4] << "\tD1 " << stages[5] << "\tD2 " << stages[6] << "\tReps " << nr_birth_events << "\tFitD " << (double)cum_fit_def/nr_birth_events << "\tCycleLen " << (double)cum_time_alive/nr_first_births << "\tDist " << pop_distance/live_comparisons << "\tMSD " << pop_msd/present_alives << endl;	//This will actually print during the programme, in contrast to printf().
 
 	if (alive==0)
 	{
