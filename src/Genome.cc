@@ -302,14 +302,15 @@ void Genome::ReplicateGenomeStep(double resource)
 	Bead* bead;
 	int gene_length = 0;
 	int repl_remaining_steps;
+	double res_int, res_fract;
 
-	if (resource >= 1.)	repl_remaining_steps = (int) resource;	//Round down to integer number of beads.
-	else if (resource <= 0.)	return;	//Zero replication, no use drawing random number.
-	else	//Regard fractional replication steps in the range [0.0,1.0] as probability.
-	{
-		if (uniform() < resource)	repl_remaining_steps = 1;
-		else return;
-	}
+	res_fract = modf(resource, &res_int);	//Split double into its integer and fractional parts.
+	repl_remaining_steps = (int) res_int;
+
+	//Regard fractional replication step as probability.
+	if (uniform() < res_fract)	repl_remaining_steps++;
+
+	if (repl_remaining_steps==0)	return;	//Nothing to do if no beads are allowed to replicate.
 
 	start = BeadList->begin();
 	advance(start, pos_fork);	//Now it points to the the first bead to be replicated in this replication step.
