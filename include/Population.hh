@@ -30,6 +30,7 @@ class Population
 		int nr_first_births;
 		int cum_time_alive;
 		double cum_fit_def;
+		int nr_death_cycles;
 
 		//These are for looking at the occurrence of evolution.
 		Prokaryote* OldGeneration[generation_sample];

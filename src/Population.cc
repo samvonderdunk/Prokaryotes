@@ -112,6 +112,10 @@ void Population::ContinuePopulationFromBackup()
 				p_id_count_++;
 				PPSpace[i][j]->fossil_id = p_id_count_;	//Other things such as time_of_appearance and Ancestor are set to zero by the EmptyProkaryote function.
 				if (PPSpace[i][j]->Stage==4 && PPSpace[i][j]->G->pos_fork!=PPSpace[i][j]->G->pos_anti_ori)	PPSpace[i][j]->Stage = 5;	//Continuing from old branches means that stage-4 can have a different meaning so we tag these individuals for death.
+				else if (PPSpace[i][j]->Stage==1 && PPSpace[i][j]->G->pos_fork!=0)	PPSpace[i][j]->Stage = 2;	//They have already replicated a bit so they are in "S" (they may or may not have priviliges).
+				//Evaluate for current stage to see if the cell should be given priviliges.
+				if (PPSpace[i][j]->G->MatchNextState(PPSpace[i][j]->Stage - 1)==5)	PPSpace[i][j]->priviliges = true;
+				else	PPSpace[i][j]->priviliges = false;
 			}
 		}
 	}
@@ -722,6 +726,7 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 			{
 				if (PPSpace[i][j]->Stage == 5)
 				{
+					nr_death_cycles++;		//You cycled yourself to death (i.e. failed cycle).
 					DeathOfProkaryote(i, j);	//Prokaryote was marked for death upon division (incomplete cycle).
 					continue;
 				}
@@ -752,7 +757,11 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 				PPSpace[i][j]->Replicate(resource);
 			}
 
-			if (PPSpace[i][j]->Stage == 6)	DeathOfProkaryote(i, j);	//Cell was marked for immediate death (i.e. no waiting for attempted division).
+			if (PPSpace[i][j]->Stage == 6)
+			{
+				nr_death_cycles++;		//You cycled yourself to death (i.e. failed cycle).
+				DeathOfProkaryote(i, j);	//Cell was marked for immediate death (i.e. no waiting for attempted division).
+			}
 
 		}
 	}
@@ -938,6 +947,7 @@ void Population::ResetProgressCounters()
 	nr_first_births = 0;
 	cum_time_alive = 0;	//Store the total time that prokaryotes undergoing mitosis are alive (used to extract the average length of their life cycle).
 	cum_fit_def = 0.0;
+	nr_death_cycles = 0;
 }
 
 /* ######################################################################## */
@@ -1231,7 +1241,7 @@ void Population::ShowGeneralProgress()
 		}
 	}
 
-	cout << "T " << Time << "\tE " << Environment << "\t() " << alive << "\t\tD " << stages[0] << "\tG1 " << stages[1] << "\tS " << stages[2] << "\tG2 " << stages[3] << "\tM " << stages[4] << "\tD1 " << stages[5] << "\tD2 " << stages[6] << "\tReps " << nr_birth_events << "\tFitD " << (double)cum_fit_def/nr_birth_events << "\tCycleLen " << (double)cum_time_alive/nr_first_births << "\tDist " << pop_distance/live_comparisons << "\tMSD " << pop_msd/present_alives << endl;	//This will actually print during the programme, in contrast to printf().
+	cout << "T " << Time << "\tE " << Environment << "\t() " << alive << "\t\tD " << stages[0] << "\tG1 " << stages[1] << "\tS " << stages[2] << "\tG2 " << stages[3] << "\tM " << stages[4] << "\tD1 " << stages[5] << "\tD2 " << stages[6] << "\tBirths " << nr_birth_events << "\tDeath-cycs " << nr_death_cycles << "\tFitD " << (double)cum_fit_def/nr_birth_events << "\tCycleLen " << (double)cum_time_alive/nr_first_births << "\tDist " << pop_distance/live_comparisons << "\tMSD " << pop_msd/present_alives << endl;	//This will actually print during the programme, in contrast to printf().
 
 	if (alive==0)
 	{
