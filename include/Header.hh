@@ -36,7 +36,7 @@ const int binding_length = 20;
 
 //Constants defined here, used in Population.hh
 //Currently gives a Segmentation fault if NR and NC are not equal!
-const int NR=100;  //While there is no diffusion, there seems to be no reason to make the field too big.
+const int NR=50;  //While there is no diffusion, there seems to be no reason to make the field too big.
 const int NC=550;
 
 //Constants defined here, used in Genome.cc
@@ -83,7 +83,7 @@ const int TimeSaveBackup = 10000;
 const int TimePruneFossils = 1000;
 const int TimeOutputFossils = 10000;
 
-const double diffusion_rate = 0.2;  // >1: multiple Margolus steps per time step, <1: probability of single Margolus step each time step.
+const double diffusion_rate = 0.0;  // >1: multiple Margolus steps per time step, <1: probability of single Margolus step each time step.
 const double death_rate = 0.001;
 const double repl_rate = 1.0;
 const int replication_neighbourhood = 3;  //i.e. a 3x3 grid represents the neighbourhood.
@@ -92,7 +92,7 @@ const int generation_sample = 10000;
 const bool environmental_noise = false;  //Actually used in Genome.cc and Population.cc (for initialisation).
 const double environmental_change_rate = 0.01;
 const int environmental_variation = 10;
-const bool resource_dependent_replication = false;
+const bool resource_dependent_replication = true;
 const bool environmental_gradient = true;
 
 //Protocol for division:
