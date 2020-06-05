@@ -111,9 +111,12 @@ void Population::ContinuePopulationFromBackup()
 			{
 				p_id_count_++;
 				PPSpace[i][j]->fossil_id = p_id_count_;	//Other things such as time_of_appearance and Ancestor are set to zero by the EmptyProkaryote function.
+
+				//Below lines are for older backups where the stage definitions are not directly convertible (e.g. cells used to be set back to Stage "1" if they did not obtain "S" expression in a particular timestep).
 				if (PPSpace[i][j]->Stage==4 && PPSpace[i][j]->G->pos_fork!=PPSpace[i][j]->G->pos_anti_ori)	PPSpace[i][j]->Stage = 5;	//Continuing from old branches means that stage-4 can have a different meaning so we tag these individuals for death.
 				else if (PPSpace[i][j]->Stage==1 && PPSpace[i][j]->G->pos_fork!=0)	PPSpace[i][j]->Stage = 2;	//They have already replicated a bit so they are in "S" (they may or may not have priviliges).
 				//Evaluate for current stage to see if the cell should be given priviliges.
+				if (PPSpace[i][j]->Stage>=2)	PPSpace[i][j]->time_replicated = 1;
 				if (PPSpace[i][j]->G->MatchNextState(PPSpace[i][j]->Stage - 1)==5)	PPSpace[i][j]->priviliges = true;
 				else	PPSpace[i][j]->priviliges = false;
 			}
