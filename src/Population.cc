@@ -871,12 +871,12 @@ void Population::SetEnvironment()
 
 void Population::GradientEnvironment(int i, int j)
 {
-	if (j < 400)
+	if (j < (8* NC/11))	//if NC==550, 8*NC/11=400
 	{
-		Environment = 10*(j/50);
+		Environment = 10*(j/ (NC/11));	//if NC==550, NC/11=50
 	}
-	else if (j < 450)	Environment = 72.;
-	else if (j < 500) Environment = 75.;
+	else if (j < (9* NC/11))	Environment = 72.;	//if NC==550, 9*NC/11=450
+	else if (j < (10* NC/11)) Environment = 75.;	//if NC=550, 10*NC/11=500
 	else	Environment = 78.;
 }
 
