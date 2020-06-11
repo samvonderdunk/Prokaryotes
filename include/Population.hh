@@ -26,11 +26,11 @@ class Population
 		unsigned long long p_id_count_;	// Counter for all agents
 
 		//Variables for output.
-		int nr_birth_events;
-		int nr_first_births;
-		int cum_time_alive;
-		double cum_fit_def;
-		int nr_death_cycles;
+		int nr_birth_events[stats_in_blocks];
+		int nr_first_births[stats_in_blocks];
+		int cum_time_alive[stats_in_blocks];
+		double cum_fit_def[stats_in_blocks];
+		int nr_death_cycles[stats_in_blocks];
 
 		//These are for looking at the occurrence of evolution.
 		Prokaryote* OldGeneration[generation_sample];

@@ -687,7 +687,7 @@ void Population::ExploreAttractorLandscape()
 void Population::UpdatePopulation()	//This is the main next-state function.
 {
 	int update_order[NR*NC];
-	int u, i, j;
+	int u, i, j, block;
 	double chance, resource;
 	double diffusion_steps;
 
@@ -710,6 +710,7 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 	{
 		i = update_order[u]/NC;	//Row index.
 		j = update_order[u]%NC;	//Column index.
+		block = j/(NC/stats_in_blocks);
 		chance = uniform();
 
 		if (environmental_gradient)	GradientEnvironment(i, j);	//Replication chunk size gradient over the field.
@@ -729,7 +730,7 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 			{
 				if (PPSpace[i][j]->Stage == 5)
 				{
-					nr_death_cycles++;		//You cycled yourself to death (i.e. failed cycle).
+					nr_death_cycles[block]++;		//You cycled yourself to death (i.e. failed cycle).
 					DeathOfProkaryote(i, j);	//Prokaryote was marked for death upon division (incomplete cycle).
 					continue;
 				}
@@ -737,10 +738,10 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 				//If you get here, all is good, division is actually going to happen!
 				if(PPSpace[i][j]->nr_offspring == 0)
 				{
-					cum_time_alive += Time - PPSpace[i][j]->time_of_appearance;
-					nr_first_births++;
+					cum_time_alive[block] += Time - PPSpace[i][j]->time_of_appearance;
+					nr_first_births[block]++;
 				}
-				cum_fit_def += PPSpace[i][j]->fitness_deficit;
+				cum_fit_def[block] += PPSpace[i][j]->fitness_deficit;
 
 				if (PPSpace[neigh.first][neigh.second] != NULL)	DeathOfProkaryote(neigh.first, neigh.second);	//Depending on the DivisionProtocol, we're committed to overgrowing neighbours.
 
@@ -748,7 +749,7 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 				p_id_count_++;
 				PPSpace[neigh.first][neigh.second]->Mitosis(PPSpace[i][j], p_id_count_);
 				if(PPSpace[neigh.first][neigh.second]->mutant)	Fossils->BuryFossil(PPSpace[neigh.first][neigh.second]);
-				nr_birth_events++;
+				nr_birth_events[block]++;
 			}
 
 			PPSpace[i][j]->G->UpdateGeneStates();
@@ -762,7 +763,7 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 
 			if (PPSpace[i][j]->Stage == 6)
 			{
-				nr_death_cycles++;		//You cycled yourself to death (i.e. failed cycle).
+				nr_death_cycles[block]++;		//You cycled yourself to death (i.e. failed cycle).
 				DeathOfProkaryote(i, j);	//Cell was marked for immediate death (i.e. no waiting for attempted division).
 			}
 
@@ -946,11 +947,15 @@ int Population::NeighbourhoodDensity(int i, int j)
 
 void Population::ResetProgressCounters()
 {
-	nr_birth_events = 0;
-	nr_first_births = 0;
-	cum_time_alive = 0;	//Store the total time that prokaryotes undergoing mitosis are alive (used to extract the average length of their life cycle).
-	cum_fit_def = 0.0;
-	nr_death_cycles = 0;
+	for(int i=0; i<stats_in_blocks; i++)
+	{
+		nr_birth_events[i] = 0;
+		nr_death_cycles[i] = 0;
+		cum_fit_def[i] = 0.0;
+		nr_first_births[i] = 0;
+		cum_time_alive[i] = 0;	//Store the total time that prokaryotes undergoing mitosis are alive (used to extract the average length of their life cycle).
+	}
+
 }
 
 /* ######################################################################## */
@@ -1180,12 +1185,12 @@ void Population::OutputBackup()
 
 void Population::ShowGeneralProgress()
 {
-	int u, alive=0, live_comparisons=0, present_alives=0;
+	int u, i, j, ii, jj, alive=0, live_comparisons=0, present_alives=0;
 	int stages[7] = {0, 0, 0, 0, 0, 0, 0};
 	double pop_distance = .0, pop_msd = .0;
 	bool already_saved_in_graveyard;
 
-	for(int i=0; i<NR; i++) for(int j=0; j<NC; j++)
+	for(i=0; i<NR; i++) for(j=0; j<NC; j++)
 	{
 		if (Time!=0 && (i*NC + j)<generation_sample)
 		{
@@ -1223,7 +1228,7 @@ void Population::ShowGeneralProgress()
 
 			if ((i*NC + j) < pow(generation_sample, 0.5))	//In a 100x100 grid, the entire first row (100 individuals) will be compared amongst themselves.
 			{
-				for (int ii=0; ii<NR; ii++)	for(int jj=0; jj<NC; jj++)
+				for (ii=0; ii<NR; ii++)	for(jj=0; jj<NC; jj++)
 				{
 					if ((ii*NC + jj) < pow(generation_sample, 0.5))
 					{
@@ -1244,7 +1249,32 @@ void Population::ShowGeneralProgress()
 		}
 	}
 
-	cout << "T " << Time << "\tE " << Environment << "\t() " << alive << "\t\tD " << stages[0] << "\tG1 " << stages[1] << "\tS " << stages[2] << "\tG2 " << stages[3] << "\tM " << stages[4] << "\tD1 " << stages[5] << "\tD2 " << stages[6] << "\tBirths " << nr_birth_events << "\tDeath-cycs " << nr_death_cycles << "\tFitD " << (double)cum_fit_def/nr_birth_events << "\tCycleLen " << (double)cum_time_alive/nr_first_births << "\tDist " << pop_distance/live_comparisons << "\tMSD " << pop_msd/present_alives << endl;	//This will actually print during the programme, in contrast to printf().
+	//Printing.
+	cout << "T " << Time << "\tE " << Environment << "\t() " << alive << "\t\tD " << stages[0] << "\tG1 " << stages[1] << "\tS " << stages[2] << "\tG2 " << stages[3] << "\tM " << stages[4] << "\tD1 " << stages[5] << "\tD2 " << stages[6] << "\tBirths ";
+	for (i=0; i<stats_in_blocks; i++)
+	{
+		cout << nr_birth_events[i];
+		if (i<stats_in_blocks-1)	cout << ",";
+	}
+	cout << "\tDeath-cycs ";
+	for (i=0; i<stats_in_blocks; i++)
+	{
+		cout << nr_death_cycles[i];
+		if (i<stats_in_blocks-1)	cout << ",";
+	}
+	cout << "\tFitD ";
+	for (i=0; i<stats_in_blocks; i++)
+	{
+		cout << (double)cum_fit_def[i]/nr_birth_events[i];
+		if (i<stats_in_blocks-1)	cout << ",";
+	}
+	cout << "\tCycleLen ";
+	for (i=0; i<stats_in_blocks; i++)
+	{
+		cout << (double)cum_time_alive[i]/nr_first_births[i];
+		if (i<stats_in_blocks-1)	cout << ",";
+	}
+	cout << "\tDist " << pop_distance/live_comparisons << "\tMSD " << pop_msd/present_alives << endl;	//This will actually print during the programme, in contrast to printf().
 
 	if (alive==0)
 	{
