@@ -121,7 +121,7 @@ void Prokaryote::UpdatePenalty(int protocol)
 	//Penalties sorted from the leanest to the strictest.
 	if (protocol == 0)				priviliges = false;	//No penalty, but does not allow you to keep replicating or attempting in Stage 2 or 4. Since the next penalties are all worse, we don't have to set the priviliges to false in those cases.
 	else if (protocol == 1)		Abortion();
-	else if (protocol == 2)		Stage = 5;	//Sentenced to wait until mitosis and then die (it won't update anymore).
+	else if (protocol == 2)		Stage = 5;	//Sentenced to wait until mitosis and then die (it won't update anymore). NOTE that priviliges are not turned off, because that would prevent the cell from attempting division!
 	else if (protocol == 3)		Stage = 6;	//Sentenced to death immediately (see Population.cc).
 }
 
