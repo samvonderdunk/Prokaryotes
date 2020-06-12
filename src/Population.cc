@@ -92,7 +92,7 @@ void Population::InitialisePopulation()
 	delete PP;	//I cannot delete PP_Copy, because each is actually turned into one of grid spaces. I can however delete this single bit of memory.
 	PP = NULL;
 
-	if (environmental_noise)	SetEnvironment();
+	if (environmental_noise)	NoiseEnvironment();
 	cout << "Initial environment = " << Environment << endl;
 }
 
@@ -126,7 +126,7 @@ void Population::ContinuePopulationFromBackup()
 	OutputBackup();
 	PruneFossilRecord();
 
-	if (environmental_noise)	SetEnvironment();
+	if (environmental_noise)	NoiseEnvironment();
 }
 
 void Population::ReadBackupFile()
@@ -519,7 +519,7 @@ void Population::FollowSingleIndividual()
 
 	for(Time=0; Time<SimTime+1; Time++)
 	{
-		if(environmental_noise)	SetEnvironment();
+		if(environmental_noise)	NoiseEnvironment();
 		//All we want is to know the expression pattern at each time step.
 		cout << "T " << Time << "\tE " << Environment << "\tStage: " << PP->Stage << "\tPriviliges: " << PP->priviliges << "\tG_len: " << PP->G->g_length << "\tExpr: " << PP->G->PrintGeneStateContent(true) << endl;
 
@@ -687,7 +687,7 @@ void Population::ExploreAttractorLandscape()
 void Population::UpdatePopulation()	//This is the main next-state function.
 {
 	int update_order[NR*NC];
-	int u, i, j, block;
+	int u, i, j, e_block, s_block;
 	double chance, resource;
 	double diffusion_steps;
 
@@ -699,7 +699,7 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 	if(Time%TimeOutputFossils==0 && Time!=0)	Fossils->ExhibitFossils();
 	if(Time%TimeSaveBackup==0 && Time!=0)	OutputBackup();
 
-	if(environmental_noise) SetEnvironment();	//Potential change of environment.
+	if(environmental_noise) NoiseEnvironment();	//Potential change of environment.
 
 	ResetProgressCounters();
 
@@ -710,10 +710,12 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 	{
 		i = update_order[u]/NC;	//Row index.
 		j = update_order[u]%NC;	//Column index.
-		block = j/(NC/stats_in_blocks);
+		e_block = j/(NC/env_blocks);
+		s_block = j/(NC/stats_in_blocks);
 		chance = uniform();
 
-		if (environmental_gradient)	GradientEnvironment(i, j);	//Replication chunk size gradient over the field.
+		// if (environmental_gradient)	GradientEnvironment(i, j);	//Replication chunk size gradient over the field.
+		Environment = gradient[e_block];
 
 		if (PPSpace[i][j] != NULL)	//Alive site.	Programme is written such that nothing happens at empty sites.
 		{
@@ -730,7 +732,7 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 			{
 				if (PPSpace[i][j]->Stage == 5)
 				{
-					nr_death_cycles[block]++;		//You cycled yourself to death (i.e. failed cycle).
+					nr_death_cycles[s_block]++;		//You cycled yourself to death (i.e. failed cycle).
 					DeathOfProkaryote(i, j);	//Prokaryote was marked for death upon division (incomplete cycle).
 					continue;
 				}
@@ -738,10 +740,10 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 				//If you get here, all is good, division is actually going to happen!
 				if(PPSpace[i][j]->nr_offspring == 0)
 				{
-					cum_time_alive[block] += Time - PPSpace[i][j]->time_of_appearance;
-					nr_first_births[block]++;
+					cum_time_alive[s_block] += Time - PPSpace[i][j]->time_of_appearance;
+					nr_first_births[s_block]++;
 				}
-				cum_fit_def[block] += PPSpace[i][j]->fitness_deficit;
+				cum_fit_def[s_block] += PPSpace[i][j]->fitness_deficit;
 
 				if (PPSpace[neigh.first][neigh.second] != NULL)	DeathOfProkaryote(neigh.first, neigh.second);	//Depending on the DivisionProtocol, we're committed to overgrowing neighbours.
 
@@ -749,7 +751,7 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 				p_id_count_++;
 				PPSpace[neigh.first][neigh.second]->Mitosis(PPSpace[i][j], p_id_count_);
 				if(PPSpace[neigh.first][neigh.second]->mutant)	Fossils->BuryFossil(PPSpace[neigh.first][neigh.second]);
-				nr_birth_events[block]++;
+				nr_birth_events[s_block]++;
 			}
 
 			PPSpace[i][j]->G->UpdateGeneStates();
@@ -763,7 +765,7 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 
 			if (PPSpace[i][j]->Stage == 6)
 			{
-				nr_death_cycles[block]++;		//You cycled yourself to death (i.e. failed cycle).
+				nr_death_cycles[s_block]++;		//You cycled yourself to death (i.e. failed cycle).
 				DeathOfProkaryote(i, j);	//Cell was marked for immediate death (i.e. no waiting for attempted division).
 			}
 
@@ -862,23 +864,12 @@ void Population::DeathOfProkaryote(int i, int j)
 	PPSpace[i][j] = NULL;
 }
 
-void Population::SetEnvironment()
+void Population::NoiseEnvironment()
 {
 	if(uniform() < environmental_change_rate)	//Change environment.
 	{
 		Environment = (double)((int)(uniform()*(2*environmental_variation+1) - environmental_variation));
 	}
-}
-
-void Population::GradientEnvironment(int i, int j)
-{
-	if (j < (8* NC/11))	//if NC==550, 8*NC/11=400
-	{
-		Environment = 10*(j/ (NC/11));	//if NC==550, NC/11=50
-	}
-	else if (j < (9* NC/11))	Environment = 72.;	//if NC==550, 9*NC/11=450
-	else if (j < (10* NC/11)) Environment = 75.;	//if NC=550, 10*NC/11=500
-	else	Environment = 78.;
 }
 
 double Population::CollectResource(int i, int j, double Environment)
@@ -1185,10 +1176,19 @@ void Population::OutputBackup()
 
 void Population::ShowGeneralProgress()
 {
-	int u, i, j, ii, jj, alive=0, live_comparisons=0, present_alives=0;
-	int stages[7] = {0, 0, 0, 0, 0, 0, 0};
+	int u, i, j, ii, jj, block, total_alive=0, live_comparisons=0, present_alives=0;
+	int alive[stats_in_blocks];
+	int stages[7][stats_in_blocks];
+	string stage_names[7] = {"D", "G1", "S", "G2", "M", "D1", "D2"};
 	double pop_distance = .0, pop_msd = .0;
 	bool already_saved_in_graveyard;
+
+	//Reset counters for total nr of proks and for each stage.
+	for (i=0; i<stats_in_blocks; i++)
+	{
+		alive[i] = 0;
+		for (j=0; j<7; j++)	stages[j][i] = 0;
+	}
 
 	for(i=0; i<NR; i++) for(j=0; j<NC; j++)
 	{
@@ -1244,41 +1244,53 @@ void Population::ShowGeneralProgress()
 
 		if (PPSpace[i][j]!=NULL)
 		{
-			alive++;
-			stages[PPSpace[i][j]->Stage]++;
+			block = j/(NC/stats_in_blocks);
+			total_alive++;
+			alive[block]++;
+			stages[PPSpace[i][j]->Stage][block]++;
 		}
 	}
 
-	//Printing.
-	cout << "T " << Time << "\tE " << Environment << "\t() " << alive << "\t\tD " << stages[0] << "\tG1 " << stages[1] << "\tS " << stages[2] << "\tG2 " << stages[3] << "\tM " << stages[4] << "\tD1 " << stages[5] << "\tD2 " << stages[6] << "\tBirths ";
-	for (i=0; i<stats_in_blocks; i++)
-	{
-		cout << nr_birth_events[i];
-		if (i<stats_in_blocks-1)	cout << ",";
-	}
-	cout << "\tDeath-cycs ";
-	for (i=0; i<stats_in_blocks; i++)
-	{
-		cout << nr_death_cycles[i];
-		if (i<stats_in_blocks-1)	cout << ",";
-	}
-	cout << "\tFitD ";
-	for (i=0; i<stats_in_blocks; i++)
-	{
-		cout << (double)cum_fit_def[i]/nr_birth_events[i];
-		if (i<stats_in_blocks-1)	cout << ",";
-	}
-	cout << "\tCycleLen ";
-	for (i=0; i<stats_in_blocks; i++)
-	{
-		cout << (double)cum_time_alive[i]/nr_first_births[i];
-		if (i<stats_in_blocks-1)	cout << ",";
-	}
-	cout << "\tDist " << pop_distance/live_comparisons << "\tMSD " << pop_msd/present_alives << endl;	//This will actually print during the programme, in contrast to printf().
+	//Printing. cout is used to achieve printing during running of the programme (vs. printf).
+	cout << "T " << Time;		//Standard output, independent of number of blocks (Environment will be random in case there are multiple environments in the field, i.e. when there is a gradient).
+	PrintStatPerBlock("E", gradient, NULL);	//Passing a double array. If stats_in_blocks is lower than the actual number of blocks in the gradient, only the first x environments from gradient will be printed.
+	PrintStatPerBlock("()", alive, NULL);
+	for (i=0; i<7; i++)	PrintStatPerBlock(stage_names[i], stages[i], NULL);
+	PrintStatPerBlock("Births", nr_birth_events, NULL);
+	PrintStatPerBlock("Death-cycs", nr_death_cycles, NULL);
+	PrintStatPerBlock("FitD", cum_fit_def, nr_birth_events);	//Passing a double array.
+	PrintStatPerBlock("CycleLen", cum_time_alive, nr_first_births);
+	cout << "\tDist " << pop_distance/live_comparisons << "\tMSD " << pop_msd/present_alives << endl;
 
-	if (alive==0)
+	if (total_alive==0)
 	{
 		cout << "And since there is no more life, we will stop the experiment here.\n" << endl;
 		exit(1);
+	}
+}
+
+void Population::PrintStatPerBlock(string stat_name, int* stat_array, int* scaler_array)
+{
+	int i;
+	cout << "\t" << stat_name << " ";
+	for (i=0; i<stats_in_blocks; i++)
+	{
+		if(scaler_array==NULL)	cout << *(stat_array+i);
+		else	cout << (double)*(stat_array+i) / *(scaler_array+i);
+
+		if (i<stats_in_blocks-1)	cout << ",";
+	}
+}
+
+void Population::PrintStatPerBlock(string stat_name, const double* stat_array, int* scaler_array)
+{
+	int i;
+	cout << "\t" << stat_name << " ";
+	for (i=0; i<stats_in_blocks; i++)
+	{
+		if(scaler_array==NULL)	cout << *(stat_array+i);
+		else	cout << (double)*(stat_array+i) / *(scaler_array+i);
+
+		if (i<stats_in_blocks-1)	cout << ",";
 	}
 }

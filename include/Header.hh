@@ -92,9 +92,12 @@ const int generation_sample = 10000;
 const bool environmental_noise = false;  //Actually used in Genome.cc and Population.cc (for initialisation).
 const double environmental_change_rate = 0.01;
 const int environmental_variation = 10;
+
 const bool resource_dependent_replication = true;
-const bool environmental_gradient = true;	//Specified protocol.
-const int stats_in_blocks = 1;		//In how many blocks should the field be split up to collect stats. Useful for analyses; for normal simulation it would be best to keep it at "1" (regard field as single block for stats).
+// const bool environmental_gradient = true;	//Specified protocol.
+const int env_blocks = 11;
+const double gradient[11] = {0., 10., 20., 30., 40., 50., 60., 70., 72., 75., 78.};
+const int stats_in_blocks = 11;		//In how many blocks should the field be split up to collect stats. Useful for analyses; for normal simulation it would be best to keep it at "1" (regard field as single block for stats).
 
 //Protocol for division:
 // 0 - overgrow neighbour.

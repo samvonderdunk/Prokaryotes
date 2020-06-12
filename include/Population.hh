@@ -56,8 +56,7 @@ class Population
 		bool IsReadyToDivide(int i, int j, int nrow, int ncol);
 		void DeathOfProkaryote(int i, int j);
 
-		void SetEnvironment();
-		void GradientEnvironment(int i, int j);
+		void NoiseEnvironment();
 		double CollectResource(int i, int j, double Environment);
 		coords PickNeighbour(int i, int j);
 		int NeighbourhoodDensity(int i, int j);
@@ -71,6 +70,8 @@ class Population
 		void PrintSampleToFile();	//Use this for samples of the field.
 		void OutputBackup();
 		void ShowGeneralProgress();
+		void PrintStatPerBlock(string stat_name, int* stat_array, int* scaler_array);
+		void PrintStatPerBlock(string stat_name, const double* stat_array, int* scaler_array);	//Version that accepts a double array.
 };
 
 #endif
