@@ -77,7 +77,7 @@ const double epsilon = 1.00;
 //constants for Population.cc
 const int TimeZero=0;
 const int default_SimTime=1000000;
-const int TimeTerminalOutput = 1;  //Note that this is also the check for extinction, so let it check!
+const int TimeTerminalOutput = 100;  //Note that this is also the check for extinction, so let it check!
 const int TimeSaveGrid = 100; //How many timesteps to save the whole grid as raw data.
 const int TimeSaveBackup = 10000;
 const int TimePruneFossils = 1000;

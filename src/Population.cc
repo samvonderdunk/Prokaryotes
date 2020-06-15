@@ -136,8 +136,8 @@ void Population::ReadBackupFile()
 	char* data_element;
 	string::iterator sit;
 	Genome::iter it;
-	int read_integer = 0, index, begin_data, end_data, counter, success, stage, pfork, panti_ori, temp_is_mutant, temp_priv;
-	bool is_mutant, priv;
+	int read_integer = 0, index, begin_data, end_data, counter, success, stage, pfork, panti_ori, temp_is_mutant, temp_priv, nr, nc;
+	bool is_mutant, priv, read_header = false;
 	unsigned long long prok_id;
 	double deficit;
 	Prokaryote* PP;
@@ -153,13 +153,40 @@ void Population::ReadBackupFile()
 	int count_lines = 0;
 	while(getline(infile,line))
 	{
-		if (count_lines%10000 == 0 && count_lines!=0)	printf("%d\n", count_lines);
-		if (count_lines/NC >= NR || count_lines%NC >= NC)
+
+		//Read "Header" of backup file.
+		if (line=="### Header ###")
 		{
-			printf("Backup file was larger than the field; aborting just to be safe.\n");
-			exit(1);
+			read_header = true;
+			continue;
 		}
-		if(line == "0")	PPSpace[count_lines/NC][count_lines%NC] = NULL;
+		else if (line=="#### Main ####")
+		{
+			read_header = false;
+			continue;
+		}
+		else if (read_header==true)
+		{
+			data_element = (char*)line.c_str();
+			success = sscanf(data_element, "NR:%d\tNC:%d", &nr, &nc);
+			if(success != 2)
+			{
+				cerr << "Could not read NR and NC from backup-file.\n" << endl;
+				exit(1);
+			}
+			else	cout << "nr=" << nr << ", nc=" << nc << endl;
+			continue;
+		}
+
+		//Start reading "Main" data from backup file.
+		//Make sure that field dimensions of backup and current simulation are related to one another.
+		if (count_lines/nc >= NR || count_lines%nc >= NC)
+		{
+			count_lines++;
+			continue;		//Sites that lie on [x,y] in the backup-sim, but where either x or y is not within the limits of the current sim; we simply lose these individuals.
+		}
+		if (count_lines%10000 == 0 && count_lines!=0)	printf("%d\n", count_lines);	//Print some progress.
+		if(line == "0")	PPSpace[count_lines/nc][count_lines%nc] = NULL;	//Empty sites.
 		else
 		{
 			//Start new individual.
@@ -273,19 +300,20 @@ void Population::ReadBackupFile()
 
 			PP->G->SetClaimVectors();
 
-			PPSpace[count_lines/NC][count_lines%NC] = PP;
+			PPSpace[count_lines/nc][count_lines%nc] = PP;
 			if (PP->mutant)	Fossils->BuryFossil(PP);
 		}
 		if(count_lines<generation_sample)
 		{
-			if(PPSpace[count_lines/NC][count_lines%NC] != NULL)	PPSpace[count_lines/NC][count_lines%NC]->saved_in_graveyard = true;
-			OldGeneration[count_lines] = PPSpace[count_lines/NC][count_lines%NC];	//Put a subset of prokaryote pointers in the OldGeneration array.
+			if(PPSpace[count_lines/nc][count_lines%nc] != NULL)	PPSpace[count_lines/nc][count_lines%nc]->saved_in_graveyard = true;
+			OldGeneration[count_lines] = PPSpace[count_lines/nc][count_lines%nc];	//Put a subset of prokaryote pointers in the OldGeneration array.
 		}
 		count_lines++;
 	}
-	if (count_lines!= NR*NC)
+	if (count_lines!= nr*nc)
 	{
-		printf("Backup file was too small for the field; aborting just to be safe.\n");
+		cout << count_lines << " " << nr << " " << nc << endl;
+		printf("Length of backup file conflicts with header (nr*nc).\n");
 		exit(1);
 	}
 }
@@ -1144,6 +1172,9 @@ void Population::OutputBackup()
 	sprintf(OutputFile, "%s/backups/backup%08d.txt", folder.c_str(), Time);
 	f=fopen(OutputFile, "w");
 	if (f == NULL)	printf("Failed to open file for writing the backup.\n");
+
+	//Print NR and NC to file.
+	fprintf(f, "### Header ###\nNR:%d\tNC:%d\n#### Main ####\n", NR, NC);
 
 	for (int i=0; i<NR; i++) for(int j=0; j<NC; j++) {
 		if(PPSpace[i][j]==NULL){
