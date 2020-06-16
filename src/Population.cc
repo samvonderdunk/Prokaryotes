@@ -136,7 +136,7 @@ void Population::ReadBackupFile()
 	char* data_element;
 	string::iterator sit;
 	Genome::iter it;
-	int read_integer = 0, index, begin_data, end_data, counter, success, stage, pfork, panti_ori, temp_is_mutant, temp_priv, nr, nc;
+	int read_integer = 0, index, begin_data, end_data, counter, success, stage, pfork, panti_ori, temp_is_mutant, temp_priv, nr=NR, nc=NC;	//For now, set nr and nc for backup-file to NR and NC parameters (i.e. if backup-file does not contain header; for old backups). May be removed later.
 	bool is_mutant, priv, read_header = false;
 	unsigned long long prok_id;
 	double deficit;
