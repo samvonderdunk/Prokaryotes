@@ -234,7 +234,7 @@ void Genome::DevelopChildrenGenomes(Genome* G_replicated)	//Function gets iterat
 			it++;
 		}
 
-		//Innovations of genes and TFBSs. Note that g_length is updated at GeneDuplication() and GeneDeletion() so any position along the genome is allowed for the novel gene/TFBS.
+		//Innovations/destructions of genes and TFBSs. Note that g_length is updated at GeneDuplication() and GeneDeletion() so any position along the genome is allowed for the novel gene/TFBS.
 		if(uniform() < gene_innovation_mu)
 		{
 			it = GeneInnovation();
@@ -245,6 +245,20 @@ void Genome::DevelopChildrenGenomes(Genome* G_replicated)	//Function gets iterat
 		{
 			TFBSInnovation();
 			(*pdup_length)++;
+		}
+		if(uniform() < house_innovation_mu)
+		{
+			HouseInnovation();
+			(*pdup_length)++;
+		}
+		if(uniform() < gene_destruction_mu)
+		{
+			GeneDestruction(pdel_length);
+		}
+		if(uniform() < bead_destruction_mu)
+		{
+			BeadDestruction();
+			(*pdel_length)++;
 		}
 
 		//Do shuffling mutations.
@@ -513,15 +527,12 @@ Genome::iter Genome::HouseMutate(iter ii, int* pdel_len)
 
 	if(uu < house_duplication_mu)
 	{
-		// cout << "Hous dup" << endl;
 		(*ii)->type = -(*ii)->type;
 		mutant_genome = true;
 		ii++;
-		// cout << "House duped" << endl;
 	}
 	else if(uu < house_duplication_mu+house_deletion_mu)
 	{
-		// cout << "HOuse del" << endl;
 		ii = HouseDeletion(ii);
 		(*pdel_len)++;
 		mutant_genome = true;
@@ -547,7 +558,7 @@ Genome::iter Genome::GeneDuplication(iter ii, int* pdup_len)
 	CopyPartOfGenomeToTemplate(first, last, &BeadListTemp); //Makes a 'chromosome' with only this gene (and its tfbs) on it.
 
 	//Splice the temporary chromosome into the full genome.
-	insertsite=FindRandomGenePosition();			//Find position of gene to insert in front of.
+	insertsite=FindRandomGenePosition(true,true);			//Find position to insert gene (may be the end of the genome).
 	insertsite=FindFirstTFBSInFrontOfGene(insertsite);	//Find first tfbs in front of this gene.
 	BeadList->splice(insertsite, BeadListTemp);	//Splice temporary list into chromosome.
 
@@ -558,23 +569,6 @@ Genome::iter Genome::GeneDuplication(iter ii, int* pdup_len)
 
 	ii=last;	//Make sure ii points to one position further than just duplicated gene.
 	return ii;
-}
-
-Genome::iter Genome::GeneInnovation()
-{
-	Gene* gene;
-	iter insertsite;
-
-	gene = new Gene();
-	gene->RandomGene();
-
-	insertsite=FindRandomGenePosition();
-	insertsite=FindFirstTFBSInFrontOfGene(insertsite);
-	insertsite=BeadList->insert(insertsite, gene);
-
-	g_length++;
-	gnr_genes++;
-	return insertsite;
 }
 
 Genome::iter Genome::GeneDeletion(iter ii, int* pdel_len)
@@ -602,11 +596,56 @@ Genome::iter Genome::GeneDeletion(iter ii, int* pdel_len)
 	return ii;
 }
 
+
+Genome::iter Genome::GeneInnovation()
+{
+	Gene* gene;
+	iter insertsite;
+
+	gene = new Gene();
+	gene->RandomGene();
+
+	insertsite=FindRandomGenePosition(true,true);
+	insertsite=FindFirstTFBSInFrontOfGene(insertsite);
+	insertsite=BeadList->insert(insertsite, gene);
+
+	g_length++;
+	gnr_genes++;
+	mutant_genome = true;
+	return insertsite;
+}
+
+void Genome::GeneDestruction(int* pdel_len)	//Based on GeneDeletion.
+{
+	iter destructsite, first, last, jj;
+	int del_length;
+
+	destructsite=FindRandomGenePosition(false,false);
+	last=destructsite;
+	last++;
+	first=FindFirstTFBSInFrontOfGene(destructsite);
+
+	del_length = distance(first, last);
+	g_length -= del_length;
+	gnr_genes--;
+	(*pdel_len) += del_length;
+
+	jj=first;
+	while( jj != last )
+	{
+		delete *jj;
+		jj++;
+	}
+	jj=(*BeadList).erase(first, last);		//Nothing is actually done with jj after this.
+	mutant_genome = true;
+}
+
 Genome::iter Genome::GeneShuffle(iter ii)
 {
 	iter insertsite, first, last, jj;
 	list<Bead*> BeadListTemp;	//Create a new temporary genome list.
 
+	mutant_genome = true;
 	//Copy the gene with its upstream tfbs's to a temporary chromosome.
 	last = ii;
 	last++;   //One further than the gene position (the one not to be part of the dupl).
@@ -615,7 +654,7 @@ Genome::iter Genome::GeneShuffle(iter ii)
 	last--;	//This is important, because if we move the virtual copy of the gene directly downstream of its original (i.e. it does not really move), then if last is still pointing to the bead that was originally adjacent to the gene, both the virtual copy and the original will be removed.
 
 	//Splice the temporary chromosome into the full genome.
-	insertsite=FindRandomGenePosition();			//Find position of gene to insert in front of.
+	insertsite=FindRandomGenePosition(true,true);			//Find position to insert gene (may be end of genome).
 	insertsite=FindFirstTFBSInFrontOfGene(insertsite);	//Find first tfbs in front of this gene.
 	BeadList->splice(insertsite, BeadListTemp);	//Splice temporary list into chromosome.
 
@@ -634,38 +673,18 @@ Genome::iter Genome::GeneShuffle(iter ii)
 Genome::iter Genome::TFBSDuplication(iter ii)
 {
 	iter tt, upstream;
-	int randpos;
 	TFBS* tfbs;
 	tfbs=dynamic_cast<TFBS *>(*ii);
 
 	tfbs->type = -tfbs->type;	//Make the type positive, so that we know that the just duplicated TFBS has been randomly moved to a new position on the genome.
 	TFBS* tfbsnew = new TFBS(*tfbs);
 
-	tt = (*BeadList).begin();
-	randpos = (int)(uniform()*g_length);
-	advance(tt,randpos);			// tt holds random spot in the genome e.g. |---------------x-----------|
+	tt = FindRandomPosition(true);
 	tt = (*BeadList).insert(tt, tfbsnew);	//Insert tfbs-copy to the left of a random position in the genome (tt).
 
 	g_length++;
 	ii++;
 	return ii;
-}
-
-void Genome::TFBSInnovation()
-{
-	TFBS* tfbs;
-	iter insertsite;
-	int randpos;
-
-	tfbs = new TFBS();
-	tfbs->RandomTFBS();
-
-	randpos = (int)(uniform() * g_length);
-	insertsite = BeadList->begin();
-	advance(insertsite,randpos);
-	BeadList->insert(insertsite, tfbs);
-
-	g_length++;
 }
 
 Genome::iter Genome::TFBSDeletion(iter ii)
@@ -679,19 +698,64 @@ Genome::iter Genome::TFBSDeletion(iter ii)
 	return ii;
 }
 
+void Genome::TFBSInnovation()
+{
+	TFBS* tfbs;
+	iter insertsite;
+
+	tfbs = new TFBS();
+	tfbs->RandomTFBS();
+
+	insertsite = FindRandomPosition(true);
+	BeadList->insert(insertsite, tfbs);
+
+	g_length++;
+	mutant_genome = true;
+}
+
+void Genome::BeadDestruction()	//Based on TFBSInnovation.
+{
+	TFBS* tfbs;
+	Gene* gene;
+	House* house;
+	iter destructsite;
+
+	destructsite = FindRandomPosition(false);	//Only existing beads can be deleted.
+
+	if (IsGene(*destructsite))
+	{
+		gene = dynamic_cast<Gene* >(*destructsite);
+		delete (gene);
+		gnr_genes--;
+	}
+	else if (IsTFBS(*destructsite))
+	{
+		tfbs = dynamic_cast<TFBS* >(*destructsite);
+		delete (tfbs);
+	}
+	else if (IsHouse(*destructsite))
+	{
+		house = dynamic_cast<House* >(*destructsite);
+		delete (house);
+		gnr_houses--;
+	}
+	(*BeadList).erase(destructsite);
+
+	g_length--;
+	mutant_genome = true;
+}
+
 Genome::iter Genome::TFBSShuffle(iter ii)
 {
 	iter tt, upstream;
-	int randpos;
 	TFBS* tfbs;
 	tfbs=dynamic_cast<TFBS *>(*ii);
 
+	mutant_genome = true;
 	//Create copy and insert at random location.
 	TFBS* tfbsnew = new TFBS(*tfbs);
 
-	tt = (*BeadList).begin();
-	randpos = (int)(uniform()*g_length);
-	advance(tt,randpos);			// tt holds random spot in the genome e.g. |---------------x-----------|
+	tt = FindRandomPosition(true);
 	tt = (*BeadList).insert(tt, tfbsnew);	//Insert tfbs-copy to the left of a random position in the genome (tt).
 
 	//Remove the old bead.
@@ -704,14 +768,11 @@ Genome::iter Genome::TFBSShuffle(iter ii)
 Genome::iter Genome::HouseDuplication(iter ii)
 {
 	iter tt, upstream;
-	int randpos;
 
 	(*ii)->type = -(*ii)->type;	//Make the type positive, so that we know that the just duplicated TFBS has been randomly moved to a new position on the genome.
 	House* housenew = new House();
 
-	tt = (*BeadList).begin();
-	randpos = (int)(uniform()*g_length);
-	advance(tt,randpos);			// tt holds random spot in the genome e.g. |---------------x-----------|
+	tt = FindRandomPosition(true);	//Including the position beyond the last current bead.
 	tt = (*BeadList).insert(tt, housenew);	//Insert tfbs-copy to the left of a random position in the genome (tt).
 
 	gnr_houses++;
@@ -730,19 +791,31 @@ Genome::iter Genome::HouseDeletion(iter ii)
 	return ii;
 }
 
+void Genome::HouseInnovation()
+{
+	House* house;
+	iter insertsite;
+
+	house = new House();
+
+	insertsite = FindRandomPosition(true);
+	BeadList->insert(insertsite, house);
+
+	g_length++;
+	mutant_genome = true;
+}
+
 Genome::iter Genome::HouseShuffle(iter ii)
 {
 	iter tt, upstream;
-	int randpos;
 	House* house;
 	house = dynamic_cast<House *>(*ii);
 
+	mutant_genome = true;
 	//Create copy and insert at random location.
 	House* housenew = new House();
 
-	tt = (*BeadList).begin();
-	randpos = (int)(uniform()*g_length);
-	advance(tt,randpos);			// tt holds random spot in the genome e.g. |---------------x-----------|
+	tt = FindRandomPosition(true);
 	tt = (*BeadList).insert(tt, housenew);	//Insert tfbs-copy to the left of a random position in the genome (tt).
 
 	//Remove the old bead.
@@ -765,26 +838,44 @@ Genome::iter Genome::FindFirstTFBSInFrontOfGene(iter ii) const
 	return jj.base();
 }
 
-Genome::iter Genome::FindRandomGenePosition() const
+Genome::iter Genome::FindRandomGenePosition(bool include_houses, bool include_end) const
 {
 	std::list< iter > pos;
 	std::list< iter >::iterator ipos;
 	iter i, ii;
-	int randpos;
+	int randpos, add_houses=0, end=0;
 
-	if(gnr_genes+gnr_houses==0)	return (*BeadList).end();
+	if(include_houses)	add_houses=gnr_houses;
+	if(include_end)	end=1;
+
+	if(gnr_genes+add_houses==0)	return (*BeadList).end();
 	else
 	{
 		i=(*BeadList).begin();
 		while(i != (*BeadList).end())
 		{
-			if(IsGene(*i) || IsHouse(*i))	pos.push_back(i);
+			if(IsGene(*i) || (IsHouse(*i) && include_houses))	pos.push_back(i);
 			i++;
 		}
-		randpos=(int)(uniform()*(gnr_genes+gnr_houses));	//If you found the first gene, randpos will be 0 (no need to advance to another gene); if you find the last gene, randpos will be gnr_genes-1 which is enough to reach the gnr_genes'th gene.
+		pos.push_back(i);
+		randpos=(int)(uniform()*(gnr_genes+add_houses+end));	//If you found the first gene, randpos will be 0 (no need to advance to another gene); if you find the last gene, randpos will be gnr_genes-1 which is enough to reach the gnr_genes'th gene.
 		ii = (*boost::next(pos.begin(),randpos));	//Possibly try advance(ii, randpos) instead.
 		return ii;
 	}
+}
+
+Genome::iter Genome::FindRandomPosition(bool include_end) const
+{
+	int randpos, end=0;
+	iter ii;
+
+	if (include_end)	end=1;	//Insertion can also happen beyond the last bead; deletion only of the current beads.
+
+	randpos = (int)(uniform()* (g_length+end));
+	ii = BeadList->begin();
+	advance(ii, randpos);
+
+	return ii;
 }
 
 void Genome::PotentialTypeChange(iter ii)

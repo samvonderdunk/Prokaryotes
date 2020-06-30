@@ -45,21 +45,25 @@ class Genome {
   iter HouseMutate(iter ii, int* pdel_len);
 
   iter GeneDuplication(iter ii, int* pdup_len);
-  iter GeneInnovation();
   iter GeneDeletion(iter ii, int* pdel_len);
+  iter GeneInnovation();
+  void GeneDestruction(int* pdel_len);
   iter GeneShuffle(iter ii);
 
   iter TFBSDuplication(iter ii);
-  void TFBSInnovation();
   iter TFBSDeletion(iter ii);
+  void TFBSInnovation();
+  void BeadDestruction();
   iter TFBSShuffle(iter ii);
 
   iter HouseDuplication(iter ii);
   iter HouseDeletion(iter ii);
+  void HouseInnovation();
   iter HouseShuffle(iter ii);
 
   iter FindFirstTFBSInFrontOfGene(iter ii) const;
-  iter FindRandomGenePosition() const;
+  iter FindRandomGenePosition(bool include_houses, bool include_end) const;
+  iter FindRandomPosition(bool include_end) const;
 
   void PotentialTypeChange(iter ii);
   bool CheckSameGeneTypes(iter ii, iter jj);
