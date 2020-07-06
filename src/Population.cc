@@ -116,7 +116,7 @@ void Population::ContinuePopulationFromBackup()
 				if (PPSpace[i][j]->Stage==4 && PPSpace[i][j]->G->pos_fork!=PPSpace[i][j]->G->pos_anti_ori)	PPSpace[i][j]->Stage = 5;	//Continuing from old branches means that stage-4 can have a different meaning so we tag these individuals for death.
 				else if (PPSpace[i][j]->Stage==1 && PPSpace[i][j]->G->pos_fork!=0)	PPSpace[i][j]->Stage = 2;	//They have already replicated a bit so they are in "S" (they may or may not have priviliges).
 				//Evaluate for current stage to see if the cell should be given priviliges.
-				if (PPSpace[i][j]->Stage>=2)	PPSpace[i][j]->time_replicated = 1;
+				if (PPSpace[i][j]->Stage>=2)	PPSpace[i][j]->time_replicated = 1;	//NOTE: this rule also applies to new backups, time_replicated is not outputted to the backup!
 				if (PPSpace[i][j]->G->MatchNextState(PPSpace[i][j]->Stage - 1)==5)	PPSpace[i][j]->priviliges = true;
 				else	PPSpace[i][j]->priviliges = false;
 			}
@@ -273,6 +273,7 @@ void Population::ReadBackupFile()
 				PP->fossil_id = prok_id;
 				PP->mutant = is_mutant;
 				PP->priviliges = priv;
+				if (PP->Stage>=2)	PP->time_replicated = 1;
 				if (prok_id > p_id_count_) p_id_count_ = prok_id;
 			}
 
