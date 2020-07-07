@@ -48,6 +48,7 @@ const bool replicate_entire_genes = false;
 const bool repl_step_noise = false;
 const int replication_time = 1;
 const int nr_household_genes = 50;
+const bool model_volume = true;
 
 // Mutations
 const double gene_threshold_mu = 0.0005;
@@ -80,7 +81,7 @@ const double epsilon = 1.00;
 
 //constants for Population.cc
 const int TimeZero=0;
-const int default_SimTime=1000000;
+const int default_SimTime=2000000;
 const int TimeTerminalOutput = 100;  //Note that this is also the check for extinction, so let it check!
 const int TimeSaveGrid = 100; //How many timesteps to save the whole grid as raw data.
 const int TimeSaveBackup = 10000;
@@ -98,7 +99,6 @@ const double environmental_change_rate = 0.01;
 const int environmental_variation = 10;
 
 const bool resource_dependent_replication = true;
-// const bool environmental_gradient = true;	//Specified protocol.
 const int env_blocks = 11;
 const double gradient[11] = {0., 10., 20., 30., 40., 50., 60., 70., 72., 75., 78.};
 const int stats_in_blocks = 11;		//In how many blocks should the field be split up to collect stats. Useful for analyses; for normal simulation it would be best to keep it at "1" (regard field as single block for stats).

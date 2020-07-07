@@ -743,7 +743,6 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 		s_block = j/(NC/stats_in_blocks);
 		chance = uniform();
 
-		// if (environmental_gradient)	GradientEnvironment(i, j);	//Replication chunk size gradient over the field.
 		Environment = gradient[e_block];
 
 		if (PPSpace[i][j] != NULL)	//Alive site.	Programme is written such that nothing happens at empty sites.

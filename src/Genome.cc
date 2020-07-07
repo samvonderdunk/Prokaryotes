@@ -1329,10 +1329,13 @@ Genome::iter Genome::MatchGeneToTFBS(iter i_tfbs)
 {
 	TFBS* tfbs;
 	tfbs = dynamic_cast<TFBS*>(*i_tfbs);
-	double claim_value, final_claim;
-	double claim_sum = 1.0;
+	double claim_value, final_claim, claim_sum, relative_volume;
 	iter i_gene;
 
+	if (model_volume)	relative_volume = (double)g_length / (double)pos_anti_ori;
+	else	relative_volume = 1.0;
+	claim_sum = relative_volume;
+	
 	//Calculate the claim sum.	//Maybe faster to iterate through the elements.
 	for(int g=0; (size_t)g<GeneStates->size(); g++)
 	{
@@ -1343,8 +1346,8 @@ Genome::iter Genome::MatchGeneToTFBS(iter i_tfbs)
 
 	//Based on the cumulative claim, pick one of the genes.
 	double die_roll = uniform();
-	if(die_roll <= 1.0 / claim_sum)	return BeadList->end();	//No active TF managed to bind the TFBS.
-	else	die_roll -= 1.0 / claim_sum;
+	if(die_roll <= relative_volume / claim_sum)	return BeadList->end();	//No active TF managed to bind the TFBS.
+	else	die_roll -= relative_volume / claim_sum;
 
 	i_gene = BeadList->begin();
 	for(int g=0; (size_t)g<GeneStates->size(); g++)
