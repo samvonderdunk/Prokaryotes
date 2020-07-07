@@ -717,8 +717,7 @@ void Population::UpdatePopulation()	//This is the main next-state function.
 {
 	int update_order[NR*NC];
 	int u, i, j, e_block, s_block;
-	double chance, resource;
-	double diffusion_steps;
+	double chance, resource, diffusion_steps;
 
 	if(Time==TimeZero)	ResetProgressCounters();	//Initialise some of my output stats for the first time.
 
@@ -1169,6 +1168,8 @@ void Population::OutputBackup()
 	Gene* gene;
 	FILE* f;
 	char OutputFile[800];
+	unsigned long long AncestorID;
+
 	sprintf(OutputFile, "%s/backups/backup%08d.txt", folder.c_str(), Time);
 	f=fopen(OutputFile, "w");
 	if (f == NULL)	printf("Failed to open file for writing the backup.\n");
@@ -1185,7 +1186,10 @@ void Population::OutputBackup()
 			fprintf(f, "%s\t", PPSpace[i][j]->G->PrintGeneStateContent(false).c_str());
 			fprintf(f, "%s\t", PPSpace[i][j]->G->PrintGeneTypeContent().c_str());
 			fprintf(f, "%s\t", PPSpace[i][j]->G->PrintContent(NULL, false, false).c_str());
-			fprintf(f, "[%d %f %d %d %llu %d %d]\t", PPSpace[i][j]->Stage, PPSpace[i][j]->fitness_deficit, PPSpace[i][j]->G->pos_fork, PPSpace[i][j]->G->pos_anti_ori, PPSpace[i][j]->fossil_id, PPSpace[i][j]->mutant, PPSpace[i][j]->priviliges);
+			
+			if (PPSpace[i][j]->Ancestor==NULL)	AncestorID = 0;
+			else	AncestorID = PPSpace[i][j]->Ancestor->fossil_id;
+			fprintf(f, "[%d %f %d %d %llu %llu %d %d]\t", PPSpace[i][j]->Stage, PPSpace[i][j]->fitness_deficit, PPSpace[i][j]->G->pos_fork, PPSpace[i][j]->G->pos_anti_ori, PPSpace[i][j]->fossil_id, AncestorID, PPSpace[i][j]->mutant, PPSpace[i][j]->priviliges);
 			fprintf(f, "{");
 			it = PPSpace[i][j]->G->BeadList->begin();
 			while (it != PPSpace[i][j]->G->BeadList->end())
