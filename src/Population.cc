@@ -256,7 +256,7 @@ void Population::ReadBackupFile()
 			data_element = strtok((char*)data.c_str(),"\t");
 			while(data_element != NULL)
 			{
-				success = sscanf(data_element, "%d %lf %d %d %llu %d %d", &stage, &deficit, &pfork, &panti_ori, &prok_id, &temp_is_mutant, &temp_priv);
+				success = sscanf(data_element, "%d %lf %d %d %llu %d %d", &stage, &deficit, &pfork, &panti_ori, &prok_id, &temp_is_mutant, &temp_priv);	//WARNING: in newer backup-files, the AncID has been inserted before temp_is_mutant and temp_priv, so BEWARE!!!
 				if(success != 7)
 				{
 					cerr << "Could not find sufficient information for this prokaryote. Backup file potentially corrupt.\n" << endl;
