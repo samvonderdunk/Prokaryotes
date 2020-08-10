@@ -102,6 +102,9 @@ const bool resource_dependent_replication = true;
 const int env_blocks = 11;
 const double gradient[11] = {0., 10., 20., 30., 40., 50., 60., 70., 72., 75., 78.};
 const int stats_in_blocks = 11;		//In how many blocks should the field be split up to collect stats. Useful for analyses; for normal simulation it would be best to keep it at "1" (regard field as single block for stats).
+// const int env_blocks = 1;
+// const double gradient[1] = {10.};
+// const int stats_in_blocks = 1;
 
 //Protocol for division:
 // 0 - overgrow neighbour.
