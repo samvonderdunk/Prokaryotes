@@ -48,7 +48,7 @@ const bool replicate_entire_genes = false;
 const bool repl_step_noise = false;
 const int replication_time = 1;
 const int nr_household_genes = 50;
-const bool model_volume = true;
+const bool model_volume = false;
 
 // Mutations
 const double gene_threshold_mu = 0.0005;
@@ -80,7 +80,7 @@ const double k_zero = 0.0000001;
 const double epsilon = 1.00;
 
 //constants for Population.cc
-const int TimeZero=0;
+const int TimeZero=250000;
 const int default_SimTime=2000000;
 const int TimeTerminalOutput = 100;  //Note that this is also the check for extinction, so let it check!
 const int TimeSaveGrid = 100; //How many timesteps to save the whole grid as raw data.
