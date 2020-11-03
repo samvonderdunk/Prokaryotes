@@ -133,11 +133,9 @@ const int BadUpdProtocol = 0;
 //constants for Prokaryote.cc
 
 //Variables defined in World.cc
-extern dsfmt_t dsfmt;
-inline double uniform() { return dsfmt_genrand_close_open(&dsfmt); }
-
 extern int Time;
 extern int initial_seed;
+extern unsigned long long seed_draws;
 extern string folder;
 extern bool mutational_neighbourhood;
 extern bool mutational_scanpath;
@@ -152,6 +150,13 @@ extern string anctrace_reboot;
 extern bool mutations_on;
 extern double init_env;
 extern int SimTime;
+
+extern dsfmt_t dsfmt;
+inline double uniform()
+{
+  seed_draws ++;
+  return dsfmt_genrand_close_open(&dsfmt);
+}
 
 const string genome_file="";
 const string genestate_file="";

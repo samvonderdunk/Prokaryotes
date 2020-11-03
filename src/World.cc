@@ -9,6 +9,7 @@
 dsfmt_t dsfmt;
 int Time;
 int initial_seed = time(0);
+unsigned long long seed_draws = 0;
 string folder = "/linuxhome/tmp/sam/Prokaryotes/";
 bool mutational_neighbourhood = false;
 bool mutational_scanpath = false;

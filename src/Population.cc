@@ -128,9 +128,9 @@ void Population::ReadBackupFile()
 	char* data_element;
 	string::iterator sit;
 	Genome::iter it;
-	int read_integer = 0, index, begin_data, end_data, counter, success, stage, pfork, panti_ori, temp_is_mutant, temp_priv, nr=NR, nc=NC;	//For now, set nr and nc for backup-file to NR and NC parameters (i.e. if backup-file does not contain header; for old backups). May be removed later.
-	bool is_mutant, priv, read_header = false;
-	unsigned long long prok_id;
+	int i, read_integer = 0, index, begin_data, end_data, counter, success, stage, pfork, panti_ori, temp_is_mutant, temp_priv, nr=NR, nc=NC, init_seed, read_header = 0;	//For now, set nr and nc for backup-file to NR and NC parameters (i.e. if backup-file does not contain header; for old backups). May be removed later.
+	bool is_mutant, priv;
+	unsigned long long prok_id, sdraws;
 	double deficit;
 	Prokaryote* PP;
 	Gene* gene;
@@ -149,15 +149,15 @@ void Population::ReadBackupFile()
 		//Read "Header" of backup file.
 		if (line=="### Header ###")
 		{
-			read_header = true;
+			read_header = 1;
 			continue;
 		}
 		else if (line=="#### Main ####")
 		{
-			read_header = false;
+			read_header = -1;
 			continue;
 		}
-		else if (read_header==true)
+		else if (read_header==1)
 		{
 			data_element = (char*)line.c_str();
 			success = sscanf(data_element, "NR:%d\tNC:%d", &nr, &nc);
@@ -167,6 +167,26 @@ void Population::ReadBackupFile()
 				exit(1);
 			}
 			else	cout << "nr=" << nr << ", nc=" << nc << endl;
+			read_header = 2;
+			continue;
+		}
+		else if (read_header==2)
+		{
+			data_element = (char*)line.c_str();
+			success = sscanf(data_element, "Initial seed:%d\tSeed draws:%llu", &init_seed, &sdraws);
+			if (success != 2)
+			{
+				cerr << "Could not read seed status from backup-file.\n" << endl;
+				exit(1);
+			}
+			else
+			{
+				cout << "Simulating " << sdraws << " random draws, initial seed=" << init_seed << endl;
+				for(i=0; i<sdraws; i++){
+					uniform();
+				}
+			}
+			read_header = 3;	//Not doing anything with this yet.
 			continue;
 		}
 
@@ -1167,7 +1187,7 @@ void Population::OutputBackup()
 	if (f == NULL)	printf("Failed to open file for writing the backup.\n");
 
 	//Print NR and NC to file.
-	fprintf(f, "### Header ###\nNR:%d\tNC:%d\n#### Main ####\n", NR, NC);
+	fprintf(f, "### Header ###\nNR:%d\tNC:%d\nInitial seed:%d\tSeed draws:%llu\n#### Main ####\n", NR, NC, initial_seed, seed_draws);
 
 	for (int i=0; i<NR; i++) for(int j=0; j<NC; j++) {
 		if(PPSpace[i][j]==NULL){
