@@ -16,7 +16,7 @@ using namespace std;
 #include <map>
 #include <iterator>
 #include <algorithm>
-#include <boost/utility.hpp>
+#include <boost/next_prior.hpp>
 #include <cstring>
 #include <sstream>
 #include <fstream>
@@ -80,7 +80,7 @@ const double k_zero = 0.0000001;
 const double epsilon = 1.00;
 
 //constants for Population.cc
-const int TimeZero=250000;
+const int TimeZero=0;
 const int default_SimTime=2000000;
 const int TimeTerminalOutput = 100;  //Note that this is also the check for extinction, so let it check!
 const int TimeSaveGrid = 100; //How many timesteps to save the whole grid as raw data.
