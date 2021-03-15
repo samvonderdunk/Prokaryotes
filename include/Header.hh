@@ -49,6 +49,8 @@ const bool repl_step_noise = false;
 const int replication_time = 1;
 const int nr_household_genes = 50;
 const bool model_volume = false;
+const bool relative_replication = true;
+const int rel_repl_full = 65;	//If we're doing relative replication, how many nutrients are considered to be needed for replication of the entire genome.
 
 // Mutations
 const double gene_threshold_mu = 0.0005;

@@ -317,10 +317,16 @@ void Genome::ReplicateGenomeStep(double resource)
 	int gene_length = 0;
 	int repl_remaining_steps;
 	double res_int, res_fract;
+	double fract_repl_remaining;
+
+	if (relative_replication)	//Modify resource to represent relative replication. Still, the fractional part of the resulting (normalised) resource is seen as a probability.
+	{
+		fract_repl_remaining = resource / rel_repl_full;
+		resource = fract_repl_remaining * pos_anti_ori;
+	}
 
 	res_fract = modf(resource, &res_int);	//Split double into its integer and fractional parts.
 	repl_remaining_steps = (int) res_int;
-
 	//Regard fractional replication step as probability.
 	if (uniform() < res_fract)	repl_remaining_steps++;
 
@@ -1335,7 +1341,7 @@ Genome::iter Genome::MatchGeneToTFBS(iter i_tfbs)
 	if (model_volume)	relative_volume = (double)g_length / (double)pos_anti_ori;
 	else	relative_volume = 1.0;
 	claim_sum = relative_volume;
-	
+
 	//Calculate the claim sum.	//Maybe faster to iterate through the elements.
 	for(int g=0; (size_t)g<GeneStates->size(); g++)
 	{
