@@ -1253,7 +1253,7 @@ void Genome::UpdateGeneStates()
 	NextStateExpression->resize(GeneStates->size());
 
 	for(int g=0; (size_t)g<GeneStates->size(); g++)	NextStateExpression->at(g) = 0;	//Make sure vector is empty (i.e. all zeroes).
-	int sumeffects=0;
+	float sumeffects=0.;
 	int it_cntr=0;	//Used to know when we pass the end of the genome (where we reset sumeffects).
 	iter it = BeadList->begin();
 	while (it != BeadList->end())
@@ -1264,28 +1264,54 @@ void Genome::UpdateGeneStates()
 
 			sumeffects -= gene->threshold;
 			int index = FindIndexOfType(abs(gene->type));	//Find the right index for GeneTypes/GeneStates of the gene type that we have in our hands.
-			gene->expression = max(min(sumeffects+1,1),0);	//For the +1, see explanation of the gene threshold in Gene.hh
+			gene->expression = max(min((int)sumeffects+1,1),0);	//For the +1, see explanation of the gene threshold in Gene.hh
 			NextStateExpression->at(index) += gene->expression;
 			sumeffects = 0;
 		}
 		else if(IsTFBS(*it))
 		{
 			iter i_gene;
-			i_gene = MatchGeneToTFBS(it);		//We actually choose a specific gene of the winning gene type / or we pick one randomly since they will all give the same activity.
-			if (i_gene == BeadList->end())
+			int bs_sumeffects=0;
+			int bs_inputs=0;
+
+			if (no_binding_noise)	//Here just add the effect of every gene with match of H>=17 and average this per binding site.
 			{
-				sumeffects += 0;
+				for(int g=0; (size_t)g<GeneStates->size(); g++)
+				{
+					tfbs = dynamic_cast<TFBS*>(*it);
+					int claim_value = (int)tfbs->ClaimVector->at(g) - 48;
+					if (claim_value >= 17)
+					{
+						i_gene = BeadList->begin();
+						//Increment i_gene until we find a gene of the correct type.
+						while(!(IsGene(*i_gene) && abs((*i_gene)->type)==GeneTypes->at(g)))
+						{
+							i_gene++;
+						}
+
+						gene = dynamic_cast<Gene*>(*i_gene);
+						//For every copy of this gene type we add its effect, and also add an input. These will be averaged below.
+						bs_sumeffects += tfbs->activity*gene->activity * GeneStates->at(g);
+						bs_inputs += GeneStates->at(g);
+					}
+				}
+				if (bs_inputs != 0)	sumeffects += (float)( (float)bs_sumeffects / (float)bs_inputs );	//Average all inputs on the binding site.
 			}
-			else
+
+			else	//Stochastic binding events: only one gene at most gets to bind the binding site.
 			{
-				gene = dynamic_cast<Gene*>(*i_gene);
-				tfbs = dynamic_cast<TFBS*>(*it);
-				sumeffects += tfbs->activity*gene->activity;
+				i_gene = MatchGeneToTFBS(it);		//We actually choose a specific gene of the winning gene type / or we pick one randomly since they will all give the same activity.
+				if (i_gene != BeadList->end())
+				{
+					gene = dynamic_cast<Gene*>(*i_gene);
+					tfbs = dynamic_cast<TFBS*>(*it);
+					sumeffects += tfbs->activity*gene->activity;
+				}
 			}
 		}
 		it++;
 		it_cntr++;
-		if(it_cntr == pos_anti_ori)	sumeffects = 0;	//Reset when we finish the 'parental' genome.
+		if(it_cntr == pos_anti_ori)	sumeffects = 0.;	//Reset when we finish the 'parental' genome.
 	}
 
 	//Now set the NextStateExpression into the GeneStates vector.
