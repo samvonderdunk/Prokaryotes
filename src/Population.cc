@@ -182,7 +182,7 @@ void Population::ReadBackupFile()
 			else
 			{
 				cout << "Simulating " << sdraws << " random draws, initial seed=" << init_seed << endl;
-				for(i=0; i<sdraws; i++){
+				for(i=0; (unsigned long long)i<sdraws; i++){
 					uniform();
 				}
 			}
@@ -393,7 +393,7 @@ void Population::ReadAncestorFile()
 					}
 					if(ip2 == Fossils->FossilList.end())
 					{
-						printf("Error: ancestor %d not found...exiting.\n", ID);
+						printf("Error: ancestor %llu not found...exiting.\n", ID);
 						exit(1);
 					}
 				}
@@ -426,7 +426,7 @@ void Population::ReadAncestorFile()
 				}
 				if(ip2 == Fossils->FossilList.end())
 				{
-					printf("Error: ancestor %d not found...exiting.\n", ID);
+					printf("Error: ancestor %llu not found...exiting.\n", ID);
 					exit(1);
 				}
 			}
