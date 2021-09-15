@@ -38,7 +38,7 @@ Bead* Gene::Clone() const    //This function returns a pointer to a bead (a gene
 
 void Gene::RandomGene()
 {
-  type = 0; //This will be assigned in the Genome.
+	type = 1+(int)(uniform()*nr_types);	//Useful if we do perfect_transport; otherwise will be redefined after InventRegulator anyway.
   threshold = (int)(uniform()*(2*WeightRange+1) - WeightRange);	//Threshold between -3 and 3 (including these borders).
   activity = (int)(uniform()*(2*WeightRange+1) - WeightRange);
   for (int k=0; k<binding_length; k++)	binding_domain[k] = (uniform()>0.5) ? true : false;

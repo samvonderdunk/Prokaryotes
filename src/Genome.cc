@@ -238,7 +238,7 @@ void Genome::DevelopChildrenGenomes(Genome* G_replicated)	//Function gets iterat
 		if(uniform() < gene_innovation_mu)
 		{
 			it = GeneInnovation();
-			PotentialTypeChange(it);
+			if(!type_mutations)	PotentialTypeChange(it);
 			(*pdup_length)++;
 		}
 		if(uniform() < tfbs_innovation_mu)
@@ -422,6 +422,12 @@ Genome::iter Genome::GeneMutate(iter ii, int* pdel_len) {
 
 	else
 	{
+		if(type_mutations && uniform() < regulator_type_mu)
+		{
+			gene->type = 1+(int)(uniform()*nr_types);
+			mutant_genome = true;
+		}
+
 		if(uniform() < gene_threshold_mu)	//All mutational events are now independent, i.e. a gene can get multiple mutations or none, or one.
 		{
 			if (uniform()>0.8)	gene->threshold = (uniform()>0.5) ? gene->threshold+1 : gene->threshold-1;
@@ -466,7 +472,7 @@ Genome::iter Genome::GeneMutate(iter ii, int* pdel_len) {
 			}
 		}
 
-		if (potential_type_change){
+		if (potential_type_change && !type_mutations){
 			PotentialTypeChange(ii);	//Check that it has not become the same type as one of the other genes. I don't think it matters that it is one of the original five. Every gene can convert into an existing type; for duplicated genes, one can attain a new type.
 		}
 		ii++;
