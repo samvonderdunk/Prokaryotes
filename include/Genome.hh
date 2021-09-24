@@ -65,6 +65,7 @@ class Genome {
   iter FindRandomGenePosition(bool include_houses, bool include_end) const;
   iter FindRandomPosition(bool include_end) const;
 
+	void DetermineRegType(iter ii);
   void PotentialTypeChange(iter ii);
   bool CheckSameGeneTypes(iter ii, iter jj);
   bool CheckSameGeneTypes(Gene* gene_ii, Gene* gene_jj);  //Some redundancy (forgot the coding jargon), allowing me to also check the types of two gene pointers.

@@ -238,7 +238,8 @@ void Genome::DevelopChildrenGenomes(Genome* G_replicated)	//Function gets iterat
 		if(uniform() < gene_innovation_mu)
 		{
 			it = GeneInnovation();
-			if(!type_mutations)	PotentialTypeChange(it);
+			if(type_mutations)	DetermineRegType(it);
+			else								PotentialTypeChange(it);
 			(*pdup_length)++;
 		}
 		if(uniform() < tfbs_innovation_mu)
@@ -405,6 +406,7 @@ Genome::iter Genome::GeneMutate(iter ii, int* pdel_len) {
 	gene = dynamic_cast<Gene*>(*ii);
 	bool potential_type_change = false;
 	int currentv, newv;
+	int i;
 
 	double uu = uniform();
 	if(uu < gene_duplication_mu)
@@ -422,10 +424,18 @@ Genome::iter Genome::GeneMutate(iter ii, int* pdel_len) {
 
 	else
 	{
-		if(type_mutations && uniform() < regulator_type_mu)
+		if(type_mutations)
 		{
-			gene->type = 1+(int)(uniform()*nr_types);
-			mutant_genome = true;
+			for(i=0; i<typeseq_length; i++)
+			{
+				if (uniform() < regulator_typeseq_mu)
+				{
+					if (gene->typeseq[i] == false)			gene->typeseq[i] = true;
+					else if(gene->typeseq[i] == true)		gene->typeseq[i] = false;
+					DetermineRegType(ii);
+					mutant_genome = true;
+				}
+			}
 		}
 
 		if(uniform() < gene_threshold_mu)	//All mutational events are now independent, i.e. a gene can get multiple mutations or none, or one.
@@ -890,6 +900,37 @@ Genome::iter Genome::FindRandomPosition(bool include_end) const
 	return ii;
 }
 
+
+void Genome::DetermineRegType(iter ii)
+{
+	int i, k, sim=0;
+	bool type_change = false;
+	Gene* gene;
+
+	gene = dynamic_cast<Gene*>(*ii);
+
+	for (i=1; i<=5; i++)
+	{
+		for (k=0; k<typeseq_length; k++)
+		{
+			if (gene->typeseq[k] == regtype[i-1][k])	sim++;
+		}
+
+		if (sim <= 2)
+		{
+			gene->type = i;
+			type_change = true;
+			break;
+		}
+	}
+
+	if (gene->type == 0 || ((gene->type >= 1 && gene->type <= 5) && !type_change))
+	{
+		gene->type = 6+(int)(uniform()*45);	//Type invention gets random type. Also for divergence from type 1-5, a new random type will be defined. In all other cases (type 1-5 to type 1-5, or type >6 to type >6), you don't have to do anything.
+	}
+}
+
+
 void Genome::PotentialTypeChange(iter ii)
 {
 	bool found_matching_type = false;
@@ -1024,9 +1065,9 @@ void Genome::ReadBeadsFromString(string genome)
 	Gene* gene;
 	TFBS* tfbs;
 	House* house;
-	int type, threshold, activity, q;
+	int type, threshold, activity, q, i;
 	char* buffer;
-	bool bitstring[binding_length];
+	bool bitstring[binding_length], typeseq[typeseq_length];
 
 	if (genestate_init == "G1")	for(int g=1; g<6; g++)	StageInit[g] = StageTargets[0][g-1];
 	else if (genestate_init == "S") for(int g=1; g<6; g++)	StageInit[g] = StageTargets[1][g-1];
@@ -1048,7 +1089,24 @@ void Genome::ReadBeadsFromString(string genome)
 				bitstring[q] = (buffer[q]=='1');	//Easiest way I could think of to convert a character to a boolean; (bool)buffer[q] always returns 1 (whether '1' or '0')!
 				q++;
 			}
-			gene = new Gene(type, threshold, activity, bitstring, 0);	//We initialise with zero expression, but these should be updated with the first round of UpdateGeneStates().
+
+			//Naive initialisation of gene type space.
+			if (type <= 5)
+			{
+				for (i=0; i<typeseq_length; i++)
+				{
+					typeseq[i] = regtype[type][i];
+				}
+			}
+			else
+			{
+				for (i=0; i<typeseq_length; i++)
+				{
+					typeseq[i] = (i%2==1);
+				}
+			}
+
+			gene = new Gene(type, threshold, activity, typeseq, bitstring, 0);	//We initialise with zero expression, but these should be updated with the first round of UpdateGeneStates().
 			index = FindIndexOfType(abs(type));
 			if(index == -1)	//Type not found in GeneTypes, so add an element.
 			{
@@ -1586,6 +1644,8 @@ string Genome::PrintContent(list<Bead*> * chromosome, bool terminal, bool only_p
 		if(IsGene(*i)) {
 			gene=dynamic_cast<Gene *>(*i);
 			stringtemp << gene_color_prefix << "G" << gene->type << ":" << gene->threshold << ":" << gene->activity << ":";
+			for(int k=0; k<typeseq_length; k++)	stringtemp << gene->typeseq[k];
+			stringtemp << ":";
 			for(int k=0; k<binding_length; k++)	stringtemp << gene->binding_domain[k];
 			stringtemp << gene_color_suffix;
 			GenomeContent+=stringtemp.str();

@@ -32,6 +32,7 @@ using namespace std;
 #define toDigit(c) (c-'0')  // Converts char to digit
 
 //Constants for Gene.hh
+const int typeseq_length = 10;
 const int binding_length = 20;
 
 //Constants defined here, used in Population.hh
@@ -58,8 +59,15 @@ const int binding_threshold = 17;	//If we're not doing binding noise, at what Ha
 
 // Mutations
 const bool type_mutations = true;
-const double regulator_type_mu = 0.00001;
-const int nr_types = 100;
+const double regulator_typeseq_mu = 0.00001;
+const bool regtype[5][typeseq_length] =
+{
+	true, false, true, false, true, false, true, false, true, false,
+	false, false, true, true, false, false, true, true, false, false,
+	false, false, false, true, true, true, false, false, false, true,
+	true, true, true, true, false, false, false, false, true, true,
+	false, false, false, false, false, true, true, true, true, true
+};
 
 const double gene_threshold_mu = 0.0005;
 const double gene_activity_mu = 0.0005;
