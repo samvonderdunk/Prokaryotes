@@ -85,7 +85,8 @@ void Prokaryote::Mitosis(Prokaryote* parent, unsigned long long tot_prok_count)
 
 	if (house_duplication_mu > 0.0 || house_deletion_mu > 0.0)	//We only have to check the number of household genes if they can actually
 	{
-		fitness_deficit = abs(nr_household_genes - G->gnr_houses) / (float)10;
+		// fitness_deficit = abs(nr_household_genes - G->gnr_houses) / (float)10;
+		fitness_deficit = min(1., (nr_household_genes - G->gnr_houses) / (double)10);
 	}
 }
 
@@ -98,7 +99,7 @@ void Prokaryote::UpdateCellCycle()	//Check whether changes in GeneStates make us
 		//Stage 4 and 2 cells will be evaluated for those stages again.
 	if (Stage == 4 || (Stage == 2 && (time_replicated < replication_time || G->pos_fork != G->pos_anti_ori)))		evaluate_stage--;
 
-	/*Evaluation*/ 
+	/*Evaluation*/
 
             //You have reached the next stage.
 	if (G->MatchNextState(evaluate_stage) == 5)    Stage = evaluate_stage + 1;
@@ -110,7 +111,7 @@ void Prokaryote::UpdateCellCycle()	//Check whether changes in GeneStates make us
 		else if (Stage == 2 && (time_replicated < replication_time || G->pos_fork != G->pos_anti_ori))    UpdatePenalty(ShortReplProtocol);
 
 		else  UpdatePenalty(BadUpdProtocol);
-                
+
 			//Even if we don't do competition upon division it does not hurt to track time_stationary by default.
 		if (G->MatchNextState(0) == 5 || G->MatchNextState(2) == 5)   time_stationary++;
 	}

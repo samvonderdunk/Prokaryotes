@@ -58,7 +58,7 @@ const bool no_binding_noise = false;
 const int binding_threshold = 17;	//If we're not doing binding noise, at what Hamming distance do genes start to bind. NOTE a possible alternative is to use the probabilities to scale all binding interactions, i.e. let everything always bind but proportional to its affinity (don't know if that is really necessary).
 
 // Mutations
-const bool type_mutations = true;
+const bool type_mutations = false;
 const double regulator_typeseq_mu = 0.00001;
 const bool regtype[5][typeseq_length] =
 {
