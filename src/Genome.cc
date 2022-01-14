@@ -131,7 +131,7 @@ void Genome::DevelopChildrenGenomes(Genome* G_replicated)	//Function gets iterat
 	vector<bool>* MutationList;
 	int del_length, dup_length, index, type_abundance;
 	int* pdup_length, * pdel_length;
-	iter it;
+	iter it, it2;
 
 	//Clean up the variables of the parental genome left behind.
 	it = BeadList->begin();
@@ -207,12 +207,32 @@ void Genome::DevelopChildrenGenomes(Genome* G_replicated)	//Function gets iterat
 			{
 				if (IsGene(*it))
 				{
-					it=GeneDuplication(it, pdup_length);
+					if (uniform() < (1./gnr_genes))
+					{
+						(*it)->type = -(*it)->type;
+
+						it2 = GeneInnovation();
+						if(type_mutations)	DetermineRegType(it2);
+						else								PotentialTypeChange(it2);
+						(*pdup_length)++;
+					}
+					else
+					{
+						it=GeneDuplication(it, pdup_length);
+					}
 				}
 				else if (IsTFBS(*it))
 				{
-					it=TFBSDuplication(it);
-					(*pdup_length)++;	//TFBS duplication always just adds one bead.
+					if (uniform() < (5./(g_length-gnr_genes-gnr_houses)))
+					{
+						TFBSInnovation();
+						(*pdup_length)++;
+					}
+					else
+					{
+						it=TFBSDuplication(it);
+						(*pdup_length)++;	//TFBS duplication always just adds one bead.
+					}
 				}
 				else if (IsHouse(*it))
 				{

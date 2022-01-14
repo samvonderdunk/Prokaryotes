@@ -76,15 +76,15 @@ const double gene_binding_domain_mu = 0.0001;
 const double tfbs_binding_site_mu = 0.0001;
 const double tfbs_activity_mu = 0.0005;
 
-const double gene_duplication_mu = 0.0005;
-const double gene_deletion_mu = 0.0005;
-const double gene_innovation_mu = 0.0005; //I set this 10x lower than other mutation rates on purpose.
+const double gene_duplication_mu = 0.0006;
+const double gene_deletion_mu = 0.0006;
+const double gene_innovation_mu = 0.000; //I set this 10x lower than other mutation rates on purpose.
 const double gene_destruction_mu = 0.0000;  //The opposite of an innovation; delete random gene from the genome. Note that this includes its binding sites. If you want to balance gene innovation mutations (which exclude binding sites), set the bead_destruction_mu to the same rate as gene, tfbs and house innovation combined.
 const double gene_shuffle_mu = 0.001;
 
-const double tfbs_duplication_mu = 0.0005;
-const double tfbs_deletion_mu = 0.0005;
-const double tfbs_innovation_mu = 0.005;
+const double tfbs_duplication_mu = 0.001;
+const double tfbs_deletion_mu = 0.001;
+const double tfbs_innovation_mu = 0.00;
 const double tfbs_shuffle_mu = 0.001;
 
 const double house_duplication_mu = 0.0001;
@@ -92,7 +92,7 @@ const double house_deletion_mu = 0.0001;
 const double house_innovation_mu = 0.000;
 const double house_shuffle_mu = 0.001;
 
-const double bead_destruction_mu = 0.000; //Opposite of all innovations combined (see above) -  on average there is no net increase or decrease of genome size. However, this would result in a bias within the genome fractions of genes, houses, and TFBSs (due to different innovation rates).
+const double bead_destruction_mu = 0.0; //Opposite of all innovations combined (see above) -  on average there is no net increase or decrease of genome size. However, this would result in a bias within the genome fractions of genes, houses, and TFBSs (due to different innovation rates).
 
 const double k_zero = 0.0000001;
 const double epsilon = 1.00;

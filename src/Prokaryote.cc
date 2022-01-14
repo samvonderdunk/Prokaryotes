@@ -85,8 +85,8 @@ void Prokaryote::Mitosis(Prokaryote* parent, unsigned long long tot_prok_count)
 
 	if (house_duplication_mu > 0.0 || house_deletion_mu > 0.0)	//We only have to check the number of household genes if they can actually
 	{
-		// fitness_deficit = abs(nr_household_genes - G->gnr_houses) / (float)10;
-		fitness_deficit = min(1., (nr_household_genes - G->gnr_houses) / (double)10);
+		fitness_deficit = abs(nr_household_genes - G->gnr_houses) / (float)10;
+		// fitness_deficit = min(1., (nr_household_genes - G->gnr_houses) / (double)10);
 	}
 }
 
