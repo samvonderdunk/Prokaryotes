@@ -315,7 +315,7 @@ void Genome::DevelopChildrenGenomes(Genome* G_replicated)	//Function gets iterat
 		it++;
 	}
 
-	if (g_length > 500)	//We only check after the full replication step, not after each replicated bead.
+	if (g_length > 1000)	//We only check after the full replication step, not after each replicated bead.
 	{
 		printf("Warning: genome sizes reached extravagant size (%d) during mitosis (i.e. due to mutations).\nExiting just to be safe...\n", g_length);
 		cout << PrintContent(NULL, true, false) << endl;
@@ -395,7 +395,7 @@ void Genome::ReplicateGenomeStep(double resource)
 	}
 
 
-	if (g_length > 500)	//We only check after the full replication step, not after each replicated bead.
+	if (g_length > 1000)	//We only check after the full replication step, not after each replicated bead.
 	{
 		printf("Warning: genome sizes reached extravagant size (%d) during replication.\nExiting just to be safe...\n", g_length);
 		cout << PrintContent(NULL, true, false) << endl;
