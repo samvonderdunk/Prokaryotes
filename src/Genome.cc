@@ -1115,7 +1115,7 @@ void Genome::ReadBeadsFromString(string genome)
 			{
 				for (i=0; i<typeseq_length; i++)
 				{
-					typeseq[i] = regtype[type][i];
+					typeseq[i] = regtype[type-1][i];
 				}
 			}
 			else
@@ -1664,8 +1664,8 @@ string Genome::PrintContent(list<Bead*> * chromosome, bool terminal, bool only_p
 		if(IsGene(*i)) {
 			gene=dynamic_cast<Gene *>(*i);
 			stringtemp << gene_color_prefix << "G" << gene->type << ":" << gene->threshold << ":" << gene->activity << ":";
-			for(int k=0; k<typeseq_length; k++)	stringtemp << gene->typeseq[k];
-			stringtemp << ":";
+			// for(int k=0; k<typeseq_length; k++)	stringtemp << gene->typeseq[k];
+			// stringtemp << ":";
 			for(int k=0; k<binding_length; k++)	stringtemp << gene->binding_domain[k];
 			stringtemp << gene_color_suffix;
 			GenomeContent+=stringtemp.str();
