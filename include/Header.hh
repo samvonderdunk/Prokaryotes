@@ -76,15 +76,15 @@ const double gene_binding_domain_mu = 0.0001;
 const double tfbs_binding_site_mu = 0.0001;
 const double tfbs_activity_mu = 0.0005;
 
-const double gene_duplication_mu = 0.0006;
-const double gene_deletion_mu = 0.0006;
-const double gene_innovation_mu = 0.000; //I set this 10x lower than other mutation rates on purpose.
+const double gene_duplication_mu = 0.0005;
+const double gene_deletion_mu = 0.0005;
+const double gene_innovation_mu = 0.0005; //I set this 10x lower than other mutation rates on purpose.
 const double gene_destruction_mu = 0.0000;  //The opposite of an innovation; delete random gene from the genome. Note that this includes its binding sites. If you want to balance gene innovation mutations (which exclude binding sites), set the bead_destruction_mu to the same rate as gene, tfbs and house innovation combined.
 const double gene_shuffle_mu = 0.001;
 
-const double tfbs_duplication_mu = 0.001;
-const double tfbs_deletion_mu = 0.001;
-const double tfbs_innovation_mu = 0.00;
+const double tfbs_duplication_mu = 0.0005;
+const double tfbs_deletion_mu = 0.0005;
+const double tfbs_innovation_mu = 0.005;
 const double tfbs_shuffle_mu = 0.001;
 
 const double house_duplication_mu = 0.0001;
@@ -128,7 +128,7 @@ const int stats_in_blocks = 11;		//In how many blocks should the field be split 
 // 0 - overgrow neighbour.
 // 1 - compete with neighbour.
 // 2 - wait for empty site.
-const int DivisionProtocol = 0;
+const int DivisionProtocol = 2;
 
 //Penalties for "wrong" cell-cycles:
 // 0 - no penalty but also not allowed to keep replicating or attempting mitosis if in "S" or "M".
@@ -136,7 +136,7 @@ const int DivisionProtocol = 0;
 // 2 - death upon division; cell is marked for death when it attempts to divide.
 // 3 - immediate death; cell is marked for immediate death.
 const int ShortReplProtocol = 0;
-const int EarlyMitProtocol = 2;
+const int EarlyMitProtocol = 3;
 const int BadUpdProtocol = 0;
 
 // Protocol settings: DivisionProtocol, ShortReplProtocol, EarlyMitProtocol, BadUpdProtocol.
