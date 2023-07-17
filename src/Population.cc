@@ -577,7 +577,7 @@ void Population::FollowSingleIndividual()
 			cout << "T " << Time << "\tE " << Environment << "\tStage: -1\tPriviliges: " << PP->priviliges << "\tG_len: " << PP->G->g_length << "\tExpr: " << PP->G->PrintGeneStateContent(true) << endl;
 			PP->Abortion();	//Although the cell is killed we can just start again by doing an abortion.
 		}
-		else if (PP->Stage == 4 && PP->priviliges == true && uniform() < repl_rate-PP->fitness_deficit && !(DivisionProtocol==2 && !uniform()<0.1))	//Attempting division. Since there are no other living beings, I don't have to consider the different DivisionProtocols or pick a random neighbour. Actually if we normally wait for an empty site, let's introduce a 10% chance to actually divide every timestep in M.
+		else if (PP->Stage == 4 && PP->priviliges == true && uniform() < repl_rate-PP->fitness_deficit && ( !(DivisionProtocol==2) || uniform()<0.2 ))	//Attempting division. Since there are no other living beings, I don't have to consider the different DivisionProtocols or pick a random neighbour. Actually if we normally wait for an empty site, let's introduce a 10% chance to actually divide every timestep in M.
 		{
 			cout << "T " << Time << "\tE " << Environment << "\tStage: 4\tPriviliges: " << PP->priviliges << "\tG_len: " << PP->G->g_length << "\tExpr: " << PP->G->PrintGeneStateContent(true) << endl;
 			PP->Abortion();	//The cell succesfully divides, but we don't need to create an actual child to continue looking at cell-cycle dynamics.
